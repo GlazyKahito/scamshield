@@ -1,223 +1,235 @@
 import Link from "next/link";
+import { ScamShieldHero } from "../components/ui/scamshield-hero";
+import { SiteNav } from "../components/ui/site-nav";
+import styles from "../components/ui/scamshield.module.css";
 
-const features = [
+/**
+ * ScamShield landing page.
+ *
+ * Server component: everything here is static markup and CSS animation. The
+ * only client JavaScript on this route is the hero's pointer tilt and the nav's
+ * mobile menu, so the page stays light on mobile.
+ *
+ * This page touches no API route and performs no analysis. Every path to real
+ * analysis goes through /analyze and the existing backend.
+ */
+
+const IMPOSTORS = [
+  { name: "Your bank", text: "KYC deadlines and account-blocked warnings" },
+  { name: "Delivery firms", text: "Held parcels and small customs fees" },
+  { name: "Employers", text: "Offers that ask you to pay to start" },
+  { name: "Payment apps", text: "Refunds that need your PIN to arrive" },
+  { name: "Government", text: "Penalties and cases that do not exist" },
+];
+
+const STEPS = [
   {
-    title: "Evidence, not guesses",
-    text: "Combines security rules with AI analysis to explain why something looks dangerous.",
+    num: "01",
+    name: "Paste",
+    text: "Drop in a suspicious message, a link, or a screenshot. Nothing is stored unless you choose to save it.",
   },
   {
-    title: "See the attack path",
-    text: "Understand how a message can lead from a click to credential or payment theft.",
+    num: "02",
+    name: "Analyze",
+    text: "A deterministic security engine checks the structure, then AI reads the intent behind the words.",
   },
   {
-    title: "Know what to do",
-    text: "Get practical next steps such as verifying through official channels and avoiding OTP sharing.",
+    num: "03",
+    name: "Understand",
+    text: "You get a risk score, the exact phrases that triggered it, and the attack path they lead to.",
   },
+  {
+    num: "04",
+    name: "Act",
+    text: "Clear, specific next steps for that kind of scam — not a generic warning to be careful.",
+  },
+];
+
+const DETECTS = [
+  {
+    name: "URGENT PRESSURE",
+    text: "Deadlines, threats and countdowns exist to stop you checking with anyone else. A real organisation will let you call them back.",
+    example: "\"Your account will be blocked today\"",
+  },
+  {
+    name: "BRAND IMPERSONATION",
+    text: "We compare the brand a message claims against the domain it actually links to, and flag the gap between them.",
+    example: "Says SBI → links to sbi-secure-login.example",
+  },
+  {
+    name: "SUSPICIOUS LINKS",
+    text: "URLs are parsed as text: raw IP hosts, punycode, buried subdomains, shorteners, login-shaped paths. Never opened.",
+    example: "verify.account.secure.xyz/login",
+  },
+  {
+    name: "CREDENTIAL THEFT",
+    text: "Requests for passwords, OTPs, card details or a UPI PIN. An incoming payment never needs your PIN.",
+    example: "\"Enter your UPI PIN to receive ₹5,000\"",
+  },
+];
+
+const PIPELINE = [
+  { index: "01", name: "User input", text: "Message, URL or screenshot. Validated and size-limited before anything runs.", accent: false },
+  { index: "02", name: "Deterministic security engine", text: "Pattern rules and URL structure analysis. No AI involved, and it runs on every request.", accent: true },
+  { index: "03", name: "AI analysis", text: "Gemini reads intent and pressure. Submitted content is fenced as untrusted data, never obeyed as instructions.", accent: false },
+  { index: "04", name: "Risk engine", text: "Both scores are deduplicated, weighted and combined into one auditable number.", accent: true },
+  { index: "05", name: "Structured threat report", text: "Score, evidence, attack path and contextual actions — every claim traceable to a detected signal.", accent: false },
 ];
 
 export default function Home() {
   return (
-    <main style={{ minHeight: "100vh", background: "#07090d", color: "#fff" }}>
-      <div
-        style={{
-          maxWidth: 1152,
-          minHeight: "100vh",
-          margin: "0 auto",
-          padding: "32px 24px",
-          boxSizing: "border-box",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <nav
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            paddingBottom: 24,
-            borderBottom: "1px solid rgba(255,255,255,.1)",
-          }}
-        >
-          <Link
-            href="/"
-            style={{
-              color: "#fff",
-              textDecoration: "none",
-              fontSize: 22,
-              fontWeight: 800,
-              letterSpacing: "-.5px",
-            }}
-          >
-            Scam<span style={{ color: "#22d3ee" }}>Shield</span>
-          </Link>
+    <div className={styles.root}>
+      {/* Ambient depth layers */}
+      <div className={styles.ambient} aria-hidden="true">
+        <div className={`${styles.ambientGlow} ${styles.ambientGlowCyan}`} />
+        <div className={`${styles.ambientGlow} ${styles.ambientGlowAmber}`} />
+        <div className={styles.ambientGrid} />
+        <div className={styles.grain} />
+      </div>
 
-          <div style={{ display: "flex", gap: 24, fontSize: 14 }}>
-            <NavLink href="/analyze">Analyze</NavLink>
-            <NavLink href="/simulator">Simulator</NavLink>
-            <NavLink href="/scams">Scam Library</NavLink>
-            <NavLink href="/dashboard">Dashboard</NavLink>
-          </div>
-        </nav>
+      <SiteNav />
 
-        <section
-          style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            textAlign: "center",
-            padding: "80px 0",
-          }}
-        >
-          <div
-            style={{
-              display: "inline-block",
-              padding: "9px 16px",
-              borderRadius: 999,
-              border: "1px solid rgba(34,211,238,.2)",
-              background: "rgba(34,211,238,.08)",
-              color: "#67e8f9",
-              fontSize: 14,
-              marginBottom: 24,
-            }}
-          >
-            AI-powered scam & phishing detection
-          </div>
+      <main>
+        <div className={styles.shell}>
+          <ScamShieldHero howItWorksId="how-it-works" />
+        </div>
 
-          <h1
-            style={{
-              maxWidth: 850,
-              margin: 0,
-              fontSize: "clamp(48px, 8vw, 78px)",
-              lineHeight: 1.02,
-              letterSpacing: "-3px",
-              fontWeight: 900,
-            }}
-          >
-            Think it&apos;s a scam?
-            <br />
-            <span style={{ color: "#22d3ee" }}>Let&apos;s prove it.</span>
-          </h1>
+        {/* 1 — Problem */}
+        <section className={styles.section}>
+          <div className={styles.shell}>
+            <p className={styles.sectionLabel}>THE PROBLEM</p>
+            <h2 className={styles.sectionTitle}>Scams don&rsquo;t look like scams anymore.</h2>
+            <p className={styles.sectionLead}>
+              The obvious tells are gone. No broken English, no strange formatting. Modern scams
+              copy the exact tone, logo and phrasing of organisations you already deal with, and
+              they arrive on the same channels those organisations use. The question is no longer
+              whether a message looks real &mdash; it is whether the request inside it makes sense.
+            </p>
 
-          <p
-            style={{
-              maxWidth: 680,
-              margin: "28px auto 0",
-              color: "rgba(255,255,255,.62)",
-              fontSize: 18,
-              lineHeight: 1.7,
-            }}
-          >
-            Paste a suspicious message or URL and ScamShield explains the risk,
-            shows the attack path, identifies warning signs, and tells you what
-            to do next.
-          </p>
-
-          <div
-            style={{
-              display: "flex",
-              gap: 16,
-              marginTop: 40,
-              flexWrap: "wrap",
-              justifyContent: "center",
-            }}
-          >
-            <Link
-              href="/analyze"
-              style={{
-                display: "inline-block",
-                padding: "15px 28px",
-                borderRadius: 12,
-                background: "#22d3ee",
-                color: "#041014",
-                textDecoration: "none",
-                fontWeight: 800,
-              }}
-            >
-              Analyze a Scam →
-            </Link>
-
-            <Link
-              href="/simulator"
-              style={{
-                display: "inline-block",
-                padding: "15px 28px",
-                borderRadius: 12,
-                border: "1px solid rgba(255,255,255,.15)",
-                background: "rgba(255,255,255,.05)",
-                color: "#fff",
-                textDecoration: "none",
-                fontWeight: 700,
-              }}
-            >
-              Try the Simulator
-            </Link>
-          </div>
-
-          <div
-            style={{
-              width: "100%",
-              maxWidth: 900,
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: 16,
-              marginTop: 80,
-              textAlign: "left",
-            }}
-          >
-            {features.map((feature) => (
-              <div
-                key={feature.title}
-                style={{
-                  padding: 24,
-                  borderRadius: 18,
-                  border: "1px solid rgba(255,255,255,.1)",
-                  background: "rgba(255,255,255,.03)",
-                }}
-              >
-                <h2 style={{ margin: 0, fontSize: 17 }}>{feature.title}</h2>
-                <p
-                  style={{
-                    margin: "10px 0 0",
-                    color: "rgba(255,255,255,.5)",
-                    fontSize: 14,
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {feature.text}
-                </p>
-              </div>
-            ))}
+            <div className={styles.impostors}>
+              {IMPOSTORS.map((impostor) => (
+                <div key={impostor.name} className={styles.impostor}>
+                  <p className={styles.impostorName}>{impostor.name}</p>
+                  <p className={styles.impostorText}>{impostor.text}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
-        <footer
-          style={{
-            borderTop: "1px solid rgba(255,255,255,.1)",
-            paddingTop: 24,
-            textAlign: "center",
-            color: "rgba(255,255,255,.4)",
-            fontSize: 13,
-          }}
-        >
-          ScamShield • Stay skeptical. Stay safe.
-        </footer>
-      </div>
-    </main>
-  );
-}
+        {/* 2 — How it works */}
+        <section className={styles.section} id="how-it-works">
+          <div className={styles.shell}>
+            <p className={styles.sectionLabel}>HOW IT WORKS</p>
+            <h2 className={styles.sectionTitle}>Four steps, about ten seconds.</h2>
+            <p className={styles.sectionLead}>
+              You end up with more than a verdict: you end up understanding the message, which is
+              what helps the next time one arrives.
+            </p>
 
-function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <Link
-      href={href}
-      style={{
-        color: "rgba(255,255,255,.6)",
-        textDecoration: "none",
-      }}
-    >
-      {children}
-    </Link>
+            <ol className={styles.steps}>
+              {STEPS.map((step) => (
+                <li key={step.num} className={styles.step}>
+                  <span className={styles.stepNum}>{step.num}</span>
+                  <p className={styles.stepName}>{step.name}</p>
+                  <p className={styles.stepText}>{step.text}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        {/* 3 — What it detects */}
+        <section className={styles.section}>
+          <div className={styles.shell}>
+            <p className={styles.sectionLabel}>WHAT SCAMSHIELD DETECTS</p>
+            <h2 className={styles.sectionTitle}>The mechanics behind almost every scam.</h2>
+            <p className={styles.sectionLead}>
+              Scams vary enormously in story and almost not at all in structure. These four
+              mechanics carry most of them.
+            </p>
+
+            <div className={styles.detects}>
+              {DETECTS.map((detect) => (
+                <article key={detect.name} className={styles.detect}>
+                  <h3 className={styles.detectName}>{detect.name}</h3>
+                  <p className={styles.detectText}>{detect.text}</p>
+                  <p className={styles.detectExample}>{detect.example}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* 4 — Security engine architecture */}
+        <section className={styles.section}>
+          <div className={styles.shell}>
+            <p className={styles.sectionLabel}>UNDER THE HOOD</p>
+            <h2 className={styles.sectionTitle}>We don&rsquo;t just ask an AI if it&rsquo;s a scam.</h2>
+            <p className={styles.sectionLead}>
+              An AI asked &ldquo;is this a scam?&rdquo; will answer confidently either way, and you
+              have no way to check it. So the deterministic engine runs first and runs always. If
+              the AI layer is unavailable, ScamShield still produces a complete report from pattern
+              analysis alone.
+            </p>
+
+            <div className={styles.pipeline}>
+              {PIPELINE.map((stage, i) => (
+                <div key={stage.index}>
+                  <div
+                    className={
+                      stage.accent
+                        ? `${styles.pipeStage} ${styles.pipeStageAccent}`
+                        : styles.pipeStage
+                    }
+                  >
+                    <span className={styles.pipeIndex}>{stage.index}</span>
+                    <div>
+                      <p className={styles.pipeName}>{stage.name}</p>
+                      <p className={styles.pipeText}>{stage.text}</p>
+                    </div>
+                  </div>
+                  {i < PIPELINE.length - 1 && <div className={styles.pipeArrow} aria-hidden="true" />}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* 5 — Final CTA */}
+        <section className={styles.finale}>
+          <div className={styles.shell}>
+            <h2 className={styles.finaleTitle}>Before you click, check.</h2>
+            <p className={styles.finaleText}>Turn suspicious messages into clear answers.</p>
+            <div className={styles.finaleCta}>
+              <Link href="/analyze" className={styles.ctaPrimary}>
+                Analyze Something Suspicious
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className={styles.footer}>
+        <div className={styles.shell}>
+          <div className={styles.footerRow}>
+            <span>ScamShield &mdash; stay skeptical, stay safe.</span>
+            <nav className={styles.footerLinks} aria-label="Footer">
+              <Link href="/analyze" className={styles.footerLink}>Analyze</Link>
+              <Link href="/simulator" className={styles.footerLink}>Simulator</Link>
+              <Link href="/scams" className={styles.footerLink}>Scam Library</Link>
+              <Link href="/dashboard" className={styles.footerLink}>Dashboard</Link>
+              <Link href="/about" className={styles.footerLink}>About</Link>
+            </nav>
+          </div>
+          <p className={styles.footerNote}>
+            ScamShield reports risk based on the text you provide. It cannot verify who owns a
+            domain or who sent a message, so a low score is not a guarantee that something is
+            genuine. When money or account access is involved, check through a channel you found
+            yourself.
+          </p>
+        </div>
+      </footer>
+    </div>
   );
 }

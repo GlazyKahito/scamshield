@@ -1,0 +1,856 @@
+/*
+ * ScamShield landing — visual system.
+ *
+ * CSS Modules, deliberately. The project's pages use inline styles rather than
+ * Tailwind classes, so this file introduces no dependency on the Tailwind
+ * config and cannot be broken by it. Class names are locally scoped, so nothing
+ * here can leak into other routes.
+ *
+ * Motion is driven by CSS custom properties that JS writes (--px/--py for the
+ * pointer). Under prefers-reduced-motion every animation is neutralised at the
+ * bottom of this file, in one place.
+ */
+
+.root {
+  --bg: #07090d;
+  --bg-raise: #0c1118;
+  --line: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.18);
+  --text: #ffffff;
+  --text-2: rgba(255, 255, 255, 0.62);
+  --text-3: rgba(255, 255, 255, 0.42);
+
+  --cyan: #22d3ee;
+  --cyan-soft: #67e8f9;
+  --cyan-glow: rgba(34, 211, 238, 0.32);
+  --amber: #f59e0b;
+  --amber-soft: #fbbf24;
+  --danger: #ef4444;
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  position: relative;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: clip;
+}
+
+/* ---------------------------------------------------------------- *
+ * Ambient background: two drifting light fields + a fine grain.
+ * Cheap (no images, no canvas) and sits behind everything.
+ * ---------------------------------------------------------------- */
+
+.ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.ambientGlow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.5;
+}
+
+.ambientGlowCyan {
+  width: 46rem;
+  height: 46rem;
+  top: -18rem;
+  right: -12rem;
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.22), transparent 68%);
+  animation: drift 22s var(--ease) infinite alternate;
+}
+
+.ambientGlowAmber {
+  width: 34rem;
+  height: 34rem;
+  top: 24rem;
+  left: -14rem;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.14), transparent 70%);
+  animation: drift 28s var(--ease) infinite alternate-reverse;
+}
+
+/* Grid floor — reads as instrumentation rather than decoration. */
+.ambientGrid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(ellipse 80% 55% at 50% 30%, #000 35%, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 55% at 50% 30%, #000 35%, transparent 78%);
+}
+
+.grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@keyframes drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(-3rem, 2.5rem, 0) scale(1.12); }
+}
+
+/* ---------------------------------------------------------------- *
+ * Shell
+ * ---------------------------------------------------------------- */
+
+.shell {
+  position: relative;
+  z-index: 1;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+
+/* ---------------------------------------------------------------- *
+ * Navigation
+ * ---------------------------------------------------------------- */
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(7, 9, 13, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--line);
+}
+
+.navInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 66px;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.logoAccent { color: var(--cyan); }
+
+.navLinks {
+  display: none;
+  align-items: center;
+  gap: 4px;
+}
+
+.navLink {
+  padding: 8px 13px;
+  border-radius: 9px;
+  color: var(--text-2);
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.navLink:hover { color: var(--text); background: rgba(255, 255, 255, 0.05); }
+.navLinkActive { color: var(--text); background: rgba(255, 255, 255, 0.07); }
+
+.navToggle {
+  display: inline-flex;
+  padding: 8px 14px;
+  border-radius: 9px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.mobileMenu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 14px;
+}
+
+.mobileLink {
+  padding: 12px 13px;
+  border-radius: 9px;
+  color: var(--text-2);
+  text-decoration: none;
+  font-size: 15px;
+}
+
+.mobileLink:hover { color: var(--text); background: rgba(255, 255, 255, 0.05); }
+
+@media (min-width: 880px) {
+  .navLinks { display: flex; }
+  .navToggle { display: none; }
+  .mobileMenu { display: none; }
+}
+
+/* ---------------------------------------------------------------- *
+ * Hero
+ * ---------------------------------------------------------------- */
+
+.hero {
+  position: relative;
+  display: grid;
+  gap: 56px;
+  padding: 64px 0 96px;
+  align-items: center;
+}
+
+@media (min-width: 1020px) {
+  .hero {
+    grid-template-columns: 1.02fr 1fr;
+    gap: 64px;
+    padding: 88px 0 120px;
+    min-height: calc(100svh - 66px);
+  }
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 15px;
+  border-radius: 999px;
+  border: 1px solid rgba(34, 211, 238, 0.22);
+  background: rgba(34, 211, 238, 0.07);
+  color: var(--cyan-soft);
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 0 0 var(--cyan-glow);
+  animation: beacon 2.4s ease-out infinite;
+}
+
+@keyframes beacon {
+  0%   { box-shadow: 0 0 0 0 var(--cyan-glow); }
+  70%  { box-shadow: 0 0 0 9px rgba(34, 211, 238, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); }
+}
+
+.headline {
+  margin: 22px 0 0;
+  font-size: clamp(44px, 7.2vw, 76px);
+  line-height: 0.99;
+  letter-spacing: -0.035em;
+  font-weight: 900;
+  text-wrap: balance;
+}
+
+.headlineProve {
+  display: block;
+  background: linear-gradient(96deg, var(--cyan) 0%, var(--cyan-soft) 42%, #ffffff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.sub {
+  max-width: 46ch;
+  margin: 24px 0 0;
+  color: var(--text-2);
+  font-size: 17.5px;
+  line-height: 1.68;
+}
+
+.ctaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 34px;
+}
+
+/* Primary CTA: the glow lifts and the sheen sweeps on hover only — motion
+   that answers the pointer rather than running on its own. */
+.ctaPrimary {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 27px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--cyan-soft), var(--cyan));
+  color: #041014;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 15px;
+  box-shadow: 0 8px 26px -10px var(--cyan-glow);
+  transition: transform 0.22s var(--ease), box-shadow 0.22s var(--ease);
+}
+
+.ctaPrimary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px -12px rgba(34, 211, 238, 0.55);
+}
+
+.ctaPrimary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-120%);
+  background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.5) 50%, transparent 62%);
+}
+
+.ctaPrimary:hover::after { animation: sheen 0.75s var(--ease) forwards; }
+
+@keyframes sheen {
+  to { transform: translateX(120%); }
+}
+
+.ctaSecondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 15px 25px;
+  border-radius: 12px;
+  border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 650;
+  font-size: 15px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s, border-color 0.2s, transform 0.22s var(--ease);
+}
+
+.ctaSecondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(34, 211, 238, 0.4);
+  transform: translateY(-2px);
+}
+
+.heroNote {
+  margin: 22px 0 0;
+  color: var(--text-3);
+  font-size: 13.5px;
+}
+
+/* ---------------------------------------------------------------- *
+ * Threat card — the hero's centrepiece
+ * ---------------------------------------------------------------- */
+
+.stage {
+  position: relative;
+  perspective: 1400px;
+}
+
+/* Glow that tracks the pointer. --px/--py are written by the component. */
+.stageGlow {
+  position: absolute;
+  inset: -14%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at calc(50% + var(--px, 0) * 26%) calc(50% + var(--py, 0) * 26%),
+    rgba(34, 211, 238, 0.2),
+    transparent 62%
+  );
+  filter: blur(46px);
+  pointer-events: none;
+  transition: background 0.25s linear;
+}
+
+.card {
+  position: relative;
+  border-radius: 16px;
+  border: 1px solid var(--line-strong);
+  background:
+    linear-gradient(180deg, rgba(18, 25, 36, 0.92), rgba(10, 14, 21, 0.94));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 34px 80px -30px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(34, 211, 238, 0.05);
+  overflow: hidden;
+  transform: rotateX(calc(var(--py, 0) * -5deg)) rotateY(calc(var(--px, 0) * 6deg));
+  transform-style: preserve-3d;
+  transition: transform 0.3s var(--ease);
+  will-change: transform;
+}
+
+/* Scan line crossing the card. The single ambient motion here. */
+.cardScan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 92px;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(34, 211, 238, 0.11) 55%, transparent);
+  animation: scan 5.5s var(--ease) infinite;
+}
+
+@keyframes scan {
+  0%   { transform: translateY(-100px); opacity: 0; }
+  12%  { opacity: 1; }
+  86%  { opacity: 1; }
+  100% { transform: translateY(560px); opacity: 0; }
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.022);
+}
+
+.cardTitle {
+  font-size: 11.5px;
+  letter-spacing: 0.13em;
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+.cardBadge {
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  color: var(--text-3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 9px;
+}
+
+.cardBody { padding: 20px 18px 22px; }
+
+.verdict {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--danger);
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+}
+
+.verdictDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+  animation: throb 1.9s ease-in-out infinite;
+}
+
+@keyframes throb {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.45; transform: scale(0.82); }
+}
+
+.scoreRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.scoreLabel {
+  font-size: 11.5px;
+  letter-spacing: 0.11em;
+  color: var(--text-3);
+  font-weight: 600;
+}
+
+.scoreValue {
+  font-size: 50px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+}
+
+.scoreOutOf { font-size: 17px; color: var(--text-3); font-weight: 700; }
+
+.meter {
+  margin-top: 13px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.meterFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--amber), var(--danger));
+  transform-origin: left;
+  animation: fill 1.5s var(--ease) forwards;
+}
+
+@keyframes fill {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+.signals { margin-top: 20px; display: flex; flex-direction: column; gap: 1px; }
+
+.signal {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+  opacity: 0;
+  animation: rise 0.5s var(--ease) forwards;
+}
+
+.signal:last-child { border-bottom: 0; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(7px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.signalIcon { color: var(--amber); font-size: 13px; line-height: 1; }
+
+.signalName {
+  flex: 1;
+  font-size: 12.5px;
+  letter-spacing: 0.055em;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+}
+
+.signalLevel {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  color: var(--amber-soft);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  background: rgba(245, 158, 11, 0.1);
+  border-radius: 5px;
+  padding: 3px 7px;
+}
+
+.pathHead {
+  margin: 22px 0 12px;
+  font-size: 11.5px;
+  letter-spacing: 0.13em;
+  color: var(--text-3);
+  font-weight: 700;
+}
+
+.path { display: flex; flex-direction: column; gap: 0; }
+
+.pathStep {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.pathNode {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(34, 211, 238, 0.85);
+  flex-shrink: 0;
+}
+
+.pathNodeEnd { background: var(--danger); }
+
+.pathLink {
+  width: 1px;
+  height: 15px;
+  margin-left: 3px;
+  background: linear-gradient(180deg, rgba(34, 211, 238, 0.5), rgba(34, 211, 238, 0.12));
+}
+
+.cardFoot {
+  padding: 12px 18px;
+  border-top: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.022);
+  color: var(--text-3);
+  font-size: 11.5px;
+}
+
+/* Floating chips, parallaxed opposite the card for depth. */
+.chip {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 13px;
+  border-radius: 11px;
+  border: 1px solid var(--line-strong);
+  background: rgba(12, 17, 24, 0.86);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 16px 34px -18px rgba(0, 0, 0, 0.9);
+  transform: translate3d(calc(var(--px, 0) * -10px), calc(var(--py, 0) * -10px), 0);
+  transition: transform 0.3s var(--ease);
+  white-space: nowrap;
+}
+
+.chipTop { top: -18px; right: -6px; }
+.chipBottom { bottom: 46px; left: -22px; }
+
+.chipDotCyan, .chipDotAmber {
+  width: 6px; height: 6px; border-radius: 50%;
+}
+.chipDotCyan { background: var(--cyan); }
+.chipDotAmber { background: var(--amber); }
+
+@media (max-width: 620px) {
+  .chip { display: none; }
+  .card { transform: none; }
+}
+
+/* ---------------------------------------------------------------- *
+ * Sections
+ * ---------------------------------------------------------------- */
+
+.section { padding: 92px 0; border-top: 1px solid var(--line); }
+
+.sectionLabel {
+  font-size: 11.5px;
+  letter-spacing: 0.15em;
+  font-weight: 700;
+  color: var(--cyan);
+  margin: 0 0 16px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: clamp(29px, 4.3vw, 44px);
+  line-height: 1.08;
+  letter-spacing: -0.028em;
+  font-weight: 850;
+  text-wrap: balance;
+  max-width: 20ch;
+}
+
+.sectionLead {
+  margin: 20px 0 0;
+  max-width: 56ch;
+  color: var(--text-2);
+  font-size: 16.5px;
+  line-height: 1.7;
+}
+
+.impostors {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(146px, 1fr));
+  gap: 12px;
+  margin-top: 42px;
+}
+
+.impostor {
+  padding: 18px 16px;
+  border-radius: 13px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.028);
+  transition: border-color 0.25s, background 0.25s, transform 0.25s var(--ease);
+}
+
+.impostor:hover {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.05);
+  transform: translateY(-3px);
+}
+
+.impostorName { font-size: 14.5px; font-weight: 700; }
+.impostorText { margin: 7px 0 0; font-size: 12.5px; color: var(--text-3); line-height: 1.55; }
+
+/* Steps: a real sequence, so numbering is meaningful here. */
+.steps {
+  display: grid;
+  gap: 14px;
+  margin-top: 46px;
+  grid-template-columns: repeat(auto-fit, minmax(216px, 1fr));
+}
+
+.step {
+  position: relative;
+  padding: 24px 20px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
+}
+
+.stepNum {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--cyan);
+}
+
+.stepName {
+  margin: 12px 0 0;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.stepText { margin: 9px 0 0; font-size: 13.5px; color: var(--text-2); line-height: 1.6; }
+
+.detects {
+  display: grid;
+  gap: 14px;
+  margin-top: 46px;
+  grid-template-columns: repeat(auto-fit, minmax(238px, 1fr));
+}
+
+.detect {
+  position: relative;
+  padding: 26px 22px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.026);
+  overflow: hidden;
+  transition: border-color 0.25s, transform 0.25s var(--ease);
+}
+
+.detect::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--cyan), transparent);
+  opacity: 0.6;
+}
+
+.detect:hover { border-color: rgba(34, 211, 238, 0.32); transform: translateY(-3px); }
+
+.detectName {
+  margin: 0;
+  font-size: 12.5px;
+  letter-spacing: 0.11em;
+  font-weight: 800;
+  color: #fff;
+}
+
+.detectText { margin: 12px 0 0; font-size: 13.5px; color: var(--text-2); line-height: 1.62; }
+
+.detectExample {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.34);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.5;
+}
+
+/* Architecture pipeline */
+.pipeline {
+  display: grid;
+  gap: 10px;
+  margin-top: 46px;
+}
+
+.pipeStage {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  border-radius: 13px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.028);
+}
+
+.pipeStageAccent { border-color: rgba(34, 211, 238, 0.3); background: rgba(34, 211, 238, 0.05); }
+
+.pipeIndex {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: var(--cyan);
+  width: 26px;
+  flex-shrink: 0;
+}
+
+.pipeName { font-size: 14.5px; font-weight: 750; letter-spacing: -0.005em; }
+.pipeText { margin: 5px 0 0; font-size: 13px; color: var(--text-3); line-height: 1.55; }
+
+.pipeArrow {
+  height: 16px;
+  margin-left: 33px;
+  width: 1px;
+  background: linear-gradient(180deg, rgba(34, 211, 238, 0.55), rgba(34, 211, 238, 0.1));
+}
+
+/* Final CTA */
+.finale {
+  padding: 96px 0 110px;
+  text-align: center;
+  border-top: 1px solid var(--line);
+}
+
+.finaleTitle {
+  margin: 0;
+  font-size: clamp(36px, 6.4vw, 66px);
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+}
+
+.finaleText { margin: 20px auto 0; max-width: 44ch; color: var(--text-2); font-size: 17px; line-height: 1.65; }
+.finaleCta { margin-top: 34px; display: flex; justify-content: center; }
+
+.footer {
+  border-top: 1px solid var(--line);
+  padding: 30px 0 40px;
+  color: var(--text-3);
+  font-size: 13px;
+}
+
+.footerRow { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: center; justify-content: space-between; }
+.footerLinks { display: flex; flex-wrap: wrap; gap: 18px; }
+.footerLink { color: var(--text-3); text-decoration: none; }
+.footerLink:hover { color: var(--text); }
+.footerNote { max-width: 62ch; margin: 16px 0 0; line-height: 1.6; }
+
+/* Focus visibility is never removed. */
+.root :focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* ---------------------------------------------------------------- *
+ * Reduced motion: one place, covers everything above.
+ * ---------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .root *,
+  .root *::before,
+  .root *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .cardScan { display: none; }
+  .card { transform: none !important; }
+  .chip { transform: none !important; }
+  .signal { opacity: 1; }
+  .meterFill { transform: scaleX(1); }
+}
