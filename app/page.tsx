@@ -1,92 +1,223 @@
 import Link from "next/link";
 
+const features = [
+  {
+    title: "Evidence, not guesses",
+    text: "Combines security rules with AI analysis to explain why something looks dangerous.",
+  },
+  {
+    title: "See the attack path",
+    text: "Understand how a message can lead from a click to credential or payment theft.",
+  },
+  {
+    title: "Know what to do",
+    text: "Get practical next steps such as verifying through official channels and avoiding OTP sharing.",
+  },
+];
+
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[#07090d] text-white">
-      <section className="mx-auto flex min-h-screen max-w-6xl flex-col px-6 py-8">
-        <nav className="flex items-center justify-between border-b border-white/10 pb-6">
-          <Link href="/" className="text-xl font-bold tracking-tight">
-            Scam<span className="text-cyan-400">Shield</span>
+    <main style={{ minHeight: "100vh", background: "#07090d", color: "#fff" }}>
+      <div
+        style={{
+          maxWidth: 1152,
+          minHeight: "100vh",
+          margin: "0 auto",
+          padding: "32px 24px",
+          boxSizing: "border-box",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <nav
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            paddingBottom: 24,
+            borderBottom: "1px solid rgba(255,255,255,.1)",
+          }}
+        >
+          <Link
+            href="/"
+            style={{
+              color: "#fff",
+              textDecoration: "none",
+              fontSize: 22,
+              fontWeight: 800,
+              letterSpacing: "-.5px",
+            }}
+          >
+            Scam<span style={{ color: "#22d3ee" }}>Shield</span>
           </Link>
 
-          <div className="hidden items-center gap-6 text-sm text-white/60 sm:flex">
-            <Link href="/analyze" className="transition hover:text-white">
-              Analyze
-            </Link>
-            <Link href="/simulator" className="transition hover:text-white">
-              Simulator
-            </Link>
-            <Link href="/scams" className="transition hover:text-white">
-              Scam Library
-            </Link>
-            <Link href="/dashboard" className="transition hover:text-white">
-              Dashboard
-            </Link>
+          <div style={{ display: "flex", gap: 24, fontSize: 14 }}>
+            <NavLink href="/analyze">Analyze</NavLink>
+            <NavLink href="/simulator">Simulator</NavLink>
+            <NavLink href="/scams">Scam Library</NavLink>
+            <NavLink href="/dashboard">Dashboard</NavLink>
           </div>
         </nav>
 
-        <div className="flex flex-1 flex-col items-center justify-center py-20 text-center">
-          <div className="mb-6 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-sm text-cyan-300">
+        <section
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+            padding: "80px 0",
+          }}
+        >
+          <div
+            style={{
+              display: "inline-block",
+              padding: "9px 16px",
+              borderRadius: 999,
+              border: "1px solid rgba(34,211,238,.2)",
+              background: "rgba(34,211,238,.08)",
+              color: "#67e8f9",
+              fontSize: 14,
+              marginBottom: 24,
+            }}
+          >
             AI-powered scam & phishing detection
           </div>
 
-          <h1 className="max-w-4xl text-5xl font-black tracking-tight sm:text-7xl">
+          <h1
+            style={{
+              maxWidth: 850,
+              margin: 0,
+              fontSize: "clamp(48px, 8vw, 78px)",
+              lineHeight: 1.02,
+              letterSpacing: "-3px",
+              fontWeight: 900,
+            }}
+          >
             Think it&apos;s a scam?
             <br />
-            <span className="text-cyan-400">Let&apos;s prove it.</span>
+            <span style={{ color: "#22d3ee" }}>Let&apos;s prove it.</span>
           </h1>
 
-          <p className="mt-7 max-w-2xl text-lg leading-8 text-white/60">
+          <p
+            style={{
+              maxWidth: 680,
+              margin: "28px auto 0",
+              color: "rgba(255,255,255,.62)",
+              fontSize: 18,
+              lineHeight: 1.7,
+            }}
+          >
             Paste a suspicious message or URL and ScamShield explains the risk,
             shows the attack path, identifies warning signs, and tells you what
             to do next.
           </p>
 
-          <div className="mt-10 flex flex-col gap-4 sm:flex-row">
+          <div
+            style={{
+              display: "flex",
+              gap: 16,
+              marginTop: 40,
+              flexWrap: "wrap",
+              justifyContent: "center",
+            }}
+          >
             <Link
               href="/analyze"
-              className="rounded-xl bg-cyan-400 px-7 py-4 font-bold text-black transition hover:bg-cyan-300"
+              style={{
+                display: "inline-block",
+                padding: "15px 28px",
+                borderRadius: 12,
+                background: "#22d3ee",
+                color: "#041014",
+                textDecoration: "none",
+                fontWeight: 800,
+              }}
             >
               Analyze a Scam →
             </Link>
 
             <Link
               href="/simulator"
-              className="rounded-xl border border-white/15 bg-white/5 px-7 py-4 font-semibold transition hover:bg-white/10"
+              style={{
+                display: "inline-block",
+                padding: "15px 28px",
+                borderRadius: 12,
+                border: "1px solid rgba(255,255,255,.15)",
+                background: "rgba(255,255,255,.05)",
+                color: "#fff",
+                textDecoration: "none",
+                fontWeight: 700,
+              }}
             >
               Try the Simulator
             </Link>
           </div>
 
-          <div className="mt-20 grid w-full max-w-4xl gap-4 text-left sm:grid-cols-3">
-            <Feature
-              title="Evidence, not guesses"
-              text="Combines security rules with AI analysis to explain why something looks dangerous."
-            />
-            <Feature
-              title="See the attack path"
-              text="Understand how a message can lead from a click to credential or payment theft."
-            />
-            <Feature
-              title="Know what to do"
-              text="Get practical next steps such as verifying through official channels and avoiding OTP sharing."
-            />
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 900,
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: 16,
+              marginTop: 80,
+              textAlign: "left",
+            }}
+          >
+            {features.map((feature) => (
+              <div
+                key={feature.title}
+                style={{
+                  padding: 24,
+                  borderRadius: 18,
+                  border: "1px solid rgba(255,255,255,.1)",
+                  background: "rgba(255,255,255,.03)",
+                }}
+              >
+                <h2 style={{ margin: 0, fontSize: 17 }}>{feature.title}</h2>
+                <p
+                  style={{
+                    margin: "10px 0 0",
+                    color: "rgba(255,255,255,.5)",
+                    fontSize: 14,
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {feature.text}
+                </p>
+              </div>
+            ))}
           </div>
-        </div>
+        </section>
 
-        <footer className="border-t border-white/10 pt-6 text-center text-sm text-white/40">
+        <footer
+          style={{
+            borderTop: "1px solid rgba(255,255,255,.1)",
+            paddingTop: 24,
+            textAlign: "center",
+            color: "rgba(255,255,255,.4)",
+            fontSize: 13,
+          }}
+        >
           ScamShield • Stay skeptical. Stay safe.
         </footer>
-      </section>
+      </div>
     </main>
   );
 }
 
-function Feature({ title, text }: { title: string; text: string }) {
+function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-      <h2 className="font-bold">{title}</h2>
-      <p className="mt-2 text-sm leading-6 text-white/50">{text}</p>
-    </div>
+    <Link
+      href={href}
+      style={{
+        color: "rgba(255,255,255,.6)",
+        textDecoration: "none",
+      }}
+    >
+      {children}
+    </Link>
   );
 }
