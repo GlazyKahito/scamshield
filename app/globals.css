@@ -1,105 +1,116 @@
 /*
- * ScamShield — global design tokens and base styles.
+ * ScamShield — global design tokens and reset.
  *
- * Deliberately small. Everything visual lives in CSS Modules; this file only
- * defines the shared tokens those modules read, plus a reset that is safe for
- * every page. No bare element selectors beyond the reset, so nothing here can
- * restyle a component by accident.
+ * Technical aesthetic: light paper background, ink text, one signal colour.
+ * No glows, gradients, or decoration. Structure from type and space.
  */
 
 :root {
   /* Surfaces */
-  --bg: #07090d;
-  --bg-raise: #0c1118;
-  --bg-sunken: #040609;
-  --surface: rgba(255, 255, 255, 0.028);
-  --surface-2: rgba(255, 255, 255, 0.05);
-  --surface-3: rgba(255, 255, 255, 0.08);
+  --bg: #F4F2EE;
+  --raised: #FBFAF7;
 
-  /* Lines */
-  --line: rgba(255, 255, 255, 0.09);
-  --line-strong: rgba(255, 255, 255, 0.16);
+  /* Text */
+  --ink: #16181B;
+  --graphite: #51555C;
+  --muted: #6E7278;
 
-  /* Text — --text-3 sits at .52 so small captions still clear WCAG AA. */
-  --text: #ffffff;
-  --text-2: rgba(255, 255, 255, 0.68);
-  --text-3: rgba(255, 255, 255, 0.52);
+  /* Accents & dividers */
+  --hairline: #D9D6CF;
+  --signal: #C8361E;
 
-  /* Accent */
-  --cyan: #22d3ee;
-  --cyan-soft: #67e8f9;
-  --cyan-glow: rgba(34, 211, 238, 0.32);
-  --cyan-tint: rgba(34, 211, 238, 0.08);
-  --cyan-line: rgba(34, 211, 238, 0.32);
+  /* Severity scale (reports & dashboard only) */
+  --sev-low: #2F7A4E;
+  --sev-moderate: #A86E12;
+  --sev-high: #C8361E;
+  --sev-critical: #8F1A10;
 
-  /* Status */
-  --amber: #f59e0b;
-  --amber-soft: #fbbf24;
-  --danger: #ef4444;
-  --danger-soft: #fca5a5;
-  --green: #34d399;
+  /* Type */
+  --font-sans: var(--font-sans-fallback, system-ui, -apple-system, "Segoe UI", sans-serif);
+  --font-mono: var(--font-mono-fallback, ui-monospace, "Courier New", monospace);
 
-  /* Severity scale — the single source for report colours. */
-  --sev-low: #34d399;
-  --sev-moderate: #fbbf24;
-  --sev-high: #f59e0b;
-  --sev-critical: #ef4444;
-
-  /* Type. The --font-* variables are injected by next/font in app/layout.tsx. */
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-display: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-
-  /* Shape and motion */
-  --radius-sm: 8px;
-  --radius: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 22px;
+  /* Motion */
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --nav-h: 64px;
 }
 
-*,
-*::before,
-*::after {
+* {
   box-sizing: border-box;
 }
 
 html {
-  color-scheme: dark;
   -webkit-text-size-adjust: 100%;
   scroll-padding-top: calc(var(--nav-h) + 16px);
 }
 
 body {
   margin: 0;
-  min-height: 100vh;
   background: var(--bg);
-  color: var(--text);
+  color: var(--ink);
   font-family: var(--font-sans);
-  font-feature-settings: "cv11", "ss01";
+  font-size: 16px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
 }
 
-img,
-svg {
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+h1 { font-size: 44px; letter-spacing: -0.02em; }
+h2 { font-size: 28px; letter-spacing: -0.015em; }
+h3 { font-size: 20px; letter-spacing: -0.01em; }
+h4 { font-size: 16px; font-weight: 600; }
+h5 { font-size: 14px; font-weight: 600; }
+h6 { font-size: 12px; font-weight: 600; }
+
+p {
+  margin: 0;
+  line-height: 1.7;
+}
+
+a {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+
+a:hover {
+  border-bottom-color: var(--signal);
+}
+
+img, svg {
   max-width: 100%;
+  display: block;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+code, pre {
+  font-family: var(--font-mono);
+  background: var(--raised);
+  border: 1px solid var(--hairline);
 }
 
 ::selection {
-  background: rgba(34, 211, 238, 0.3);
-  color: #fff;
+  background: var(--signal);
+  color: var(--raised);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  html {
-    scroll-behavior: smooth;
-  }
-}
-
-/* Visually hidden but available to assistive technology. */
+/* Visually hidden but available to screen readers */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -110,4 +121,20 @@ svg {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
