@@ -242,20 +242,37 @@ export function ThreatScanner({ exploreId }: { exploreId: string }) {
                   if (error) setError(null);
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                    e.preventDefault();
-                    void analyze();
-                  }
+                  if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) return;
+                  // Plain Enter sends on keyboards; on touch screens Enter stays a new line.
+                  const send = e.metaKey || e.ctrlKey || window.matchMedia("(pointer: fine)").matches;
+                  if (!send) return;
+                  e.preventDefault();
+                  void analyze();
                 }}
                 readOnly={busy}
                 maxLength={MAX_TEXT + 500}
                 placeholder="Paste a suspicious message, link, or email…"
+                aria-describedby="scanner-hint"
               />
-              <div className={styles.label}>
-                <span>TEXT INPUT &middot; CTRL + ENTER</span>
-                <button type="button" className={styles.clear} onClick={() => setText("")} disabled={!text || busy}>
-                  CLEAR
-                </button>
+              <div className={styles.inputFoot}>
+                <span id="scanner-hint" className={styles.hint}>
+                  <span className={styles.hintKeys}>SHIFT + ENTER FOR NEW LINE</span>
+                </span>
+                <div className={styles.inputActions}>
+                  <button type="button" className={styles.clear} onClick={() => setText("")} disabled={!text || busy}>
+                    CLEAR
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.send}
+                    onClick={() => void analyze()}
+                    disabled={!canSubmit}
+                    aria-label="Analyze this message"
+                  >
+                    {busy ? "ANALYZING…" : "ANALYZE"}
+                    <span className={styles.sendKey} aria-hidden="true">&#8629;</span>
+                  </button>
+                </div>
               </div>
             </div>
 
