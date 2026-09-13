@@ -112,11 +112,11 @@ export function ShieldMark({ size = 20 }: { size?: number }) {
     <svg width={size} height={size} viewBox="0 0 22 22" fill="none" aria-hidden="true">
       <path
         d="M11 1.5 3.5 4.6v6.1c0 4.5 3.1 8.3 7.5 9.8 4.4-1.5 7.5-5.3 7.5-9.8V4.6L11 1.5Z"
-        stroke="#22d3ee"
+        stroke="currentColor"
         strokeWidth="1.4"
         strokeLinejoin="round"
       />
-      <path d="M6.5 10.4h9" stroke="#22d3ee" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M6.5 10.4h9" stroke="#C8361E" strokeWidth="1.4" strokeLinecap="round" />
     </svg>
   );
 }

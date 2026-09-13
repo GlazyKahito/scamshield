@@ -39,9 +39,9 @@ const BANDS = [
 ] as const;
 
 const SIGNAL_COLOR: Record<SecuritySignal["severity"], string> = {
-  HIGH: "#ef4444",
-  MEDIUM: "#fbbf24",
-  LOW: "#9aa4b2",
+  HIGH: "#C8361E",
+  MEDIUM: "#A86E12",
+  LOW: "#6E7278",
 };
 
 function confidenceLabel(confidence: number): string {
@@ -228,11 +228,11 @@ function Recommendations({ actions }: { actions: RecommendedAction[] }) {
     <div className={styles.recGrid}>
       {dos.length > 0 && (
         <div className={`${styles.recBox} ${styles.recDo}`}>
-          <h3 className={styles.recTitle} style={{ color: "#34d399" }}>DO THIS</h3>
+          <h3 className={styles.recTitle} style={{ color: "#2F7A4E" }}>DO THIS</h3>
           <ul className={styles.recList}>
             {dos.map((action, i) => (
               <li key={i} className={styles.recItem}>
-                <span className={styles.recMark} style={{ color: "#34d399", background: tint("#34d399", 0.14) }} aria-hidden="true">
+                <span className={styles.recMark} style={{ color: "#2F7A4E", background: tint("#2F7A4E", 0.12) }} aria-hidden="true">
                   ✓
                 </span>
                 {action.text}
@@ -244,11 +244,11 @@ function Recommendations({ actions }: { actions: RecommendedAction[] }) {
 
       {donts.length > 0 && (
         <div className={`${styles.recBox} ${styles.recDont}`}>
-          <h3 className={styles.recTitle} style={{ color: "#f87171" }}>DON&rsquo;T</h3>
+          <h3 className={styles.recTitle} style={{ color: "#C8361E" }}>DON&rsquo;T</h3>
           <ul className={styles.recList}>
             {donts.map((action, i) => (
               <li key={i} className={styles.recItem}>
-                <span className={styles.recMark} style={{ color: "#f87171", background: tint("#ef4444", 0.14) }} aria-hidden="true">
+                <span className={styles.recMark} style={{ color: "#C8361E", background: tint("#C8361E", 0.12) }} aria-hidden="true">
                   ✕
                 </span>
                 {action.text}
@@ -276,7 +276,7 @@ function UrlBreakdown({ analyses }: { analyses: UrlAnalysis[] }) {
             </div>
             <div>
               <dt className={styles.statLabel}>Encrypted</dt>
-              <dd className={styles.statValue} style={{ color: analysis.facts.hasHttps ? "#34d399" : "#f59e0b" }}>
+              <dd className={styles.statValue} style={{ color: analysis.facts.hasHttps ? "#2F7A4E" : "#A86E12" }}>
                 {analysis.facts.hasHttps ? "Yes · HTTPS" : "No · HTTP"}
               </dd>
             </div>
@@ -394,7 +394,7 @@ export function ReportView({
                     </li>
                   ))}
                   {report.signals.length > topFlags.length && (
-                    <li className={styles.flag} style={{ color: "var(--text-3)" }}>
+                    <li className={styles.flag} style={{ color: "var(--muted)" }}>
                       +{report.signals.length - topFlags.length} more
                     </li>
                   )}

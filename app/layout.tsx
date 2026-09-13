@@ -5,14 +5,14 @@ import "./globals.css";
 const sans = DM_Sans({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-sans",
+  variable: "--font-dm-sans",
   weight: ["400", "500", "600"],
 });
 
 const mono = IBM_Plex_Mono({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-mono",
+  variable: "--font-plex-mono",
   weight: ["400", "500"],
 });
 
@@ -22,8 +22,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#07090d",
-  colorScheme: "dark",
+  themeColor: "#F4F2EE",
+  colorScheme: "light",
 };
 
 export default function RootLayout({

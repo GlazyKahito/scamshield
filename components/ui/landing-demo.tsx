@@ -22,9 +22,9 @@ import styles from "./scamshield.module.css";
  */
 
 const SEVERITY_TONE: Record<SecuritySignal["severity"], string> = {
-  HIGH: "#ef4444",
-  MEDIUM: "#fbbf24",
-  LOW: "rgba(255,255,255,0.52)",
+  HIGH: "#C8361E",
+  MEDIUM: "#A86E12",
+  LOW: "#6E7278",
 };
 
 export function LandingDemo() {
@@ -50,7 +50,7 @@ export function LandingDemo() {
     return { score, severity: severityFromScore(score), signals: unique.slice(0, 5), total: unique.length };
   }, [deferred]);
 
-  const color = result ? SEVERITY_COLOR[result.severity] : "rgba(255,255,255,0.3)";
+  const color = result ? SEVERITY_COLOR[result.severity] : "#B9B5AC";
 
   const runFull = () => {
     setAnalyzerDraft({ mode: "MESSAGE", value: text });

@@ -8,10 +8,10 @@ import type { Severity } from "../../types/analysis";
  */
 
 export const SEVERITY_COLOR: Record<Severity, string> = {
-  LOW: "#34d399",
-  MODERATE: "#fbbf24",
-  HIGH: "#f59e0b",
-  CRITICAL: "#ef4444",
+  LOW: "#2F7A4E",
+  MODERATE: "#A86E12",
+  HIGH: "#C8361E",
+  CRITICAL: "#8F1A10",
 };
 
 export const SEVERITY_LABEL: Record<Severity, string> = {

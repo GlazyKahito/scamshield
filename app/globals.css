@@ -2,49 +2,56 @@
  * ScamShield — global design tokens and reset.
  *
  * Technical aesthetic: light paper background, ink text, one signal colour.
- * No glows, gradients, or decoration. Structure from type and space.
+ * Everything visual lives in CSS Modules; no element styling beyond the reset.
  */
 
 :root {
   /* Surfaces */
   --bg: #F4F2EE;
   --raised: #FBFAF7;
+  --sunken: #ECE9E3;
 
   /* Text */
   --ink: #16181B;
   --graphite: #51555C;
   --muted: #6E7278;
 
-  /* Accents & dividers */
+  /* Lines */
   --hairline: #D9D6CF;
+  --rule: #B9B5AC;
+
+  /* The one accent */
   --signal: #C8361E;
 
-  /* Severity scale (reports & dashboard only) */
+  /* Severity scale (reports, dashboard, simulator) */
   --sev-low: #2F7A4E;
   --sev-moderate: #A86E12;
   --sev-high: #C8361E;
   --sev-critical: #8F1A10;
 
-  /* Type */
-  --font-sans: var(--font-sans-fallback, system-ui, -apple-system, "Segoe UI", sans-serif);
-  --font-mono: var(--font-mono-fallback, ui-monospace, "Courier New", monospace);
+  /* Type — --font-dm-sans and --font-plex-mono are injected by next/font. */
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  /* Motion */
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --nav-h: 64px;
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
 html {
+  color-scheme: light;
   -webkit-text-size-adjust: 100%;
   scroll-padding-top: calc(var(--nav-h) + 16px);
 }
 
 body {
   margin: 0;
+  min-height: 100vh;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-sans);
@@ -54,63 +61,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  margin: 0;
-  font-weight: 600;
-  line-height: 1.2;
-}
-
-h1 { font-size: 44px; letter-spacing: -0.02em; }
-h2 { font-size: 28px; letter-spacing: -0.015em; }
-h3 { font-size: 20px; letter-spacing: -0.01em; }
-h4 { font-size: 16px; font-weight: 600; }
-h5 { font-size: 14px; font-weight: 600; }
-h6 { font-size: 12px; font-weight: 600; }
-
-p {
-  margin: 0;
-  line-height: 1.7;
-}
-
-a {
-  color: var(--ink);
-  text-decoration: none;
-  border-bottom: 1px solid transparent;
-  transition: border-color 0.2s;
-}
-
-a:hover {
-  border-bottom-color: var(--signal);
-}
-
-img, svg {
+img,
+svg {
   max-width: 100%;
-  display: block;
-}
-
-button {
-  font-family: inherit;
-  font-size: inherit;
-  cursor: pointer;
-}
-
-input, textarea, select {
-  font-family: inherit;
-  font-size: inherit;
-}
-
-code, pre {
-  font-family: var(--font-mono);
-  background: var(--raised);
-  border: 1px solid var(--hairline);
 }
 
 ::selection {
-  background: var(--signal);
+  background: var(--ink);
   color: var(--raised);
 }
 
-/* Visually hidden but available to screen readers */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -124,9 +84,7 @@ code, pre {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  html {
-    scroll-behavior: smooth;
-  }
+  html { scroll-behavior: smooth; }
 }
 
 @media (prefers-reduced-motion: reduce) {

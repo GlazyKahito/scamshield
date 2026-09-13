@@ -90,10 +90,10 @@ export default function SimulatorPage() {
 
   const resultCopy =
     scorePct >= 80
-      ? { title: "Sharp instincts.", color: "var(--green)" }
+      ? { title: "Sharp instincts.", color: "var(--sev-low)" }
       : scorePct >= 50
-        ? { title: "Good — with a few gaps.", color: "var(--amber-soft)" }
-        : { title: "These are built to fool people.", color: "var(--danger-soft)" };
+        ? { title: "Good — with a few gaps.", color: "var(--sev-moderate)" }
+        : { title: "These are built to fool people.", color: "var(--signal)" };
 
   return (
     <div className={styles.page}>
@@ -137,8 +137,8 @@ export default function SimulatorPage() {
                       <span
                         className={styles.reviewMark}
                         style={{
-                          color: ok ? "var(--green)" : "var(--danger-soft)",
-                          background: ok ? "rgba(52,211,153,0.14)" : "rgba(239,68,68,0.14)",
+                          color: ok ? "var(--sev-low)" : "var(--signal)",
+                          borderColor: ok ? "var(--sev-low)" : "var(--signal)",
                         }}
                         aria-hidden="true"
                       >
@@ -255,7 +255,7 @@ export default function SimulatorPage() {
                         {tag && (
                           <span
                             className={styles.optionResult}
-                            style={{ color: tag === "SAFE" ? "var(--green)" : "var(--danger-soft)" }}
+                            style={{ color: tag === "SAFE" ? "var(--sev-low)" : "var(--signal)" }}
                           >
                             {chosen ? `YOUR PICK · ${tag}` : tag}
                           </span>
@@ -275,7 +275,7 @@ export default function SimulatorPage() {
                   <div ref={feedbackRef} className={styles.feedback} aria-live="polite" style={{ scrollMarginBottom: 24 }}>
                     <p
                       className={styles.feedbackVerdict}
-                      style={{ color: isCorrect ? "var(--green)" : "var(--amber-soft)" }}
+                      style={{ color: isCorrect ? "var(--sev-low)" : "var(--signal)" }}
                     >
                       {isCorrect ? "That’s the safe choice." : "That one would have cost you."}
                     </p>
