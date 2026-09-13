@@ -147,6 +147,15 @@
 .moreLink { color: var(--ink); text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 3px; }
 .moreLink:hover { text-decoration-color: var(--ink); }
 
+.moreSpec {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
 /* ---------------------------------------------------------------- *
  * Instrument panel
  * ---------------------------------------------------------------- */

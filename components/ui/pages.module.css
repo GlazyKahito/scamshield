@@ -435,6 +435,18 @@
 .dropHint { margin: 8px 0 16px; font-size: 13px; color: var(--muted); }
 .dropDisabled { opacity: 0.55; }
 
+.dropSpecs {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px 32px;
+  margin: 0 0 20px;
+}
+
+.dropSpecs div { display: flex; align-items: baseline; gap: 8px; }
+.dropSpecs dt { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; color: var(--muted); }
+.dropSpecs dd { margin: 0; font-size: 13px; font-weight: 500; color: var(--ink); }
+
 .previewWrap {
   display: flex;
   align-items: center;

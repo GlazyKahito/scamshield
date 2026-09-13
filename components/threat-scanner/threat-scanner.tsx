@@ -7,6 +7,7 @@ import type { ThreatReport } from "../../types/analysis";
 import { MESSAGE_EXAMPLES } from "../../lib/content/examples";
 import { saveReport } from "../../lib/storage/history";
 import { CLASSIFICATION_LABEL, SEVERITY_COLOR } from "../report/severity";
+import { ACCEPTED_IMAGE_LABEL, MAX_IMAGE_LABEL } from "../../lib/validation/limits";
 import styles from "./threat-scanner.module.css";
 
 /**
@@ -207,6 +208,9 @@ export function ThreatScanner({ exploreId }: { exploreId: string }) {
 
             <p className={styles.more}>
               Have a screenshot? <Link href="/analyze" className={styles.moreLink}>Use the full analyzer</Link>
+              <span className={styles.moreSpec}>
+                {ACCEPTED_IMAGE_LABEL} &middot; up to {MAX_IMAGE_LABEL}
+              </span>
             </p>
           </div>
 

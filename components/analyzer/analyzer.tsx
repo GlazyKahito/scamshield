@@ -7,6 +7,13 @@ import { saveReport } from "../../lib/storage/history";
 import { takeAnalyzerDraft } from "../../lib/storage/draft";
 import { MESSAGE_EXAMPLES, URL_EXAMPLES } from "../../lib/content/examples";
 import { ReportView } from "../report/report-view";
+import {
+  ACCEPTED_IMAGE_LABEL,
+  ACCEPTED_IMAGE_TYPES,
+  MAX_IMAGE_BYTES,
+  MAX_IMAGE_LABEL,
+  formatBytes,
+} from "../../lib/validation/limits";
 import styles from "../ui/pages.module.css";
 
 /**
@@ -21,9 +28,8 @@ import styles from "../ui/pages.module.css";
 type Mode = "MESSAGE" | "URL" | "SCREENSHOT";
 
 const MAX_TEXT = 8000;
-const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
 const REQUEST_TIMEOUT_MS = 60_000;
-const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp"];
+const ACCEPTED_TYPES: readonly string[] = ACCEPTED_IMAGE_TYPES;
 
 const MODES: { id: Mode; label: string; Icon: typeof MessageSquareText }[] = [
   { id: "MESSAGE", label: "Text", Icon: MessageSquareText },
@@ -45,10 +51,6 @@ const STAGES = [
   "Building your report",
 ];
 
-function formatBytes(bytes: number): string {
-  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 export function Analyzer() {
   const baseId = useId();
@@ -150,11 +152,13 @@ export function Analyzer() {
     setError(null);
 
     if (!ACCEPTED_TYPES.includes(file.type)) {
-      setError("Screenshots must be PNG, JPEG or WebP.");
+      setError(`Screenshots must be ${ACCEPTED_IMAGE_LABEL}.`);
       return;
     }
     if (file.size > MAX_IMAGE_BYTES) {
-      setError("That screenshot is over 3MB. Try cropping it to just the message.");
+      setError(
+        `That screenshot is ${formatBytes(file.size)} — the limit is ${MAX_IMAGE_LABEL}. Crop it to just the message, or take a smaller screenshot.`,
+      );
       return;
     }
 
@@ -455,7 +459,8 @@ export function Analyzer() {
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <p className={styles.previewName}>{imageData.name}</p>
                     <p className={styles.previewMeta}>
-                      {imageData.mimeType.replace("image/", "").toUpperCase()} &middot; {formatBytes(imageData.size)}
+                      {imageData.mimeType.replace("image/", "").toUpperCase()} &middot; {formatBytes(imageData.size)} of{" "}
+                      {MAX_IMAGE_LABEL} max
                     </p>
                   </div>
                   <button
@@ -489,9 +494,17 @@ export function Analyzer() {
                 >
                   <ImageUp size={28} className={styles.dropIcon} aria-hidden="true" />
                   <p className={styles.dropTitle}>Drop a screenshot here</p>
-                  <p className={styles.dropHint}>
-                    or paste one with Ctrl+V &middot; PNG, JPEG or WebP, up to 3MB
-                  </p>
+                  <p className={styles.dropHint}>or paste one with Ctrl+V</p>
+                  <dl className={styles.dropSpecs} aria-label="Upload requirements">
+                    <div>
+                      <dt>FORMAT</dt>
+                      <dd>{ACCEPTED_IMAGE_LABEL}</dd>
+                    </div>
+                    <div>
+                      <dt>MAX SIZE</dt>
+                      <dd>{MAX_IMAGE_LABEL}</dd>
+                    </div>
+                  </dl>
                   <label className={`${styles.btnGhost} ${styles.btnSm}`} htmlFor="file-input">
                     Choose a file
                   </label>

@@ -7,24 +7,18 @@
  */
 
 import { z } from "zod";
+import { ACCEPTED_IMAGE_LABEL, ACCEPTED_IMAGE_TYPES, MAX_IMAGE_BYTES, MAX_IMAGE_LABEL } from "./limits";
+
+export { ACCEPTED_IMAGE_TYPES, MAX_IMAGE_BYTES };
 
 /** Long enough for a forwarded email chain, short enough to bound AI cost. */
 export const MAX_TEXT_LENGTH = 8000;
 export const MIN_TEXT_LENGTH = 3;
 export const MAX_URL_LENGTH = 2048;
 
-/**
- * 3MB of raw image. Base64 adds ~33%, so the JSON body stays under Vercel's
- * 4.5MB request limit; anything larger would fail at the platform with no
- * useful message.
- */
-export const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
-
 /** Hard caps on raw request bodies, checked before JSON parsing. */
 export const MAX_TEXT_BODY_BYTES = 64 * 1024;
 export const MAX_IMAGE_BODY_BYTES = Math.ceil((MAX_IMAGE_BYTES * 4) / 3) + 16 * 1024;
-
-export const ACCEPTED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"] as const;
 
 const BASE64_PATTERN = /^[A-Za-z0-9+/]+={0,2}$/;
 
@@ -68,7 +62,7 @@ export const analyzeUrlSchema = z.object({
 export const analyzeImageSchema = z
   .object({
     mimeType: z.enum(ACCEPTED_IMAGE_TYPES, {
-      errorMap: () => ({ message: "Screenshots must be PNG, JPEG or WebP." }),
+      errorMap: () => ({ message: `Screenshots must be ${ACCEPTED_IMAGE_LABEL}.` }),
     }),
     base64Data: z
       .string()
@@ -77,11 +71,11 @@ export const analyzeImageSchema = z
         // base64 expands by ~4/3; check decoded size without allocating a buffer.
         const decodedBytes = Math.floor((value.length * 3) / 4);
         return decodedBytes <= MAX_IMAGE_BYTES;
-      }, "Screenshots must be under 3MB.")
+      }, `Screenshots must be under ${MAX_IMAGE_LABEL}.`)
       .refine((value) => BASE64_PATTERN.test(value), "The uploaded image could not be read."),
   })
   .refine((data) => matchesImageSignature(data.base64Data, data.mimeType), {
-    message: "That file is not a valid PNG, JPEG or WebP image.",
+    message: `That file is not a valid ${ACCEPTED_IMAGE_LABEL} image.`,
     path: ["base64Data"],
   });
 
