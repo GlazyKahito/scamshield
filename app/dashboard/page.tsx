@@ -1,39 +1,42 @@
 import type { Metadata } from "next";
 import { SiteNav } from "../../components/ui/site-nav";
-import { Analyzer } from "../../components/analyzer/analyzer";
+import { SiteFooter } from "../../components/ui/site-footer";
+import { Dashboard } from "../../components/dashboard/dashboard";
 import styles from "../../components/ui/pages.module.css";
 
 export const metadata: Metadata = {
-  title: "Check a message — ScamShield",
-  description: "Paste a suspicious message, link or screenshot and see why it looks risky.",
+  title: "Dashboard — ScamShield",
+  description: "Your saved ScamShield reports, risk breakdown and awareness score.",
 };
 
 /**
- * /analyze — the focused security workspace.
+ * /dashboard — saved history and awareness.
  *
- * Server component wrapper; the interactive analyzer is the only client code.
+ * Server component wrapper; history lives in the browser, so the dashboard
+ * itself is a client component.
  */
-export default function AnalyzePage() {
+export default function DashboardPage() {
   return (
     <div className={styles.page}>
       <SiteNav />
 
       <header className={styles.head}>
-        <div className={styles.shellNarrow}>
-          <p className={styles.eyebrow}>ANALYZER</p>
-          <h1 className={styles.title}>Check something suspicious</h1>
+        <div className={styles.shell}>
+          <p className={styles.eyebrow}>DASHBOARD</p>
+          <h1 className={styles.title}>Your security overview</h1>
           <p className={styles.lead}>
-            Paste a message, a link, or a screenshot. You will get a risk score, the exact phrases
-            that triggered it, how the scam would work, and what to do next.
+            Every report you save, and how sharp your scam radar is. Stored only in this browser.
           </p>
         </div>
       </header>
 
       <main className={styles.body}>
-        <div className={styles.shellNarrow}>
-          <Analyzer />
+        <div className={styles.shell}>
+          <Dashboard />
         </div>
       </main>
+
+      <SiteFooter />
     </div>
   );
 }

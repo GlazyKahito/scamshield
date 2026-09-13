@@ -1,8 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { ClipboardPaste, ImageUp, Link2, MessageSquareText, X } from "lucide-react";
 import type { ThreatReport } from "../../types/analysis";
 import { saveReport } from "../../lib/storage/history";
+import { takeAnalyzerDraft } from "../../lib/storage/draft";
+import { MESSAGE_EXAMPLES, URL_EXAMPLES } from "../../lib/content/examples";
 import { ReportView } from "../report/report-view";
 import styles from "../ui/pages.module.css";
 
@@ -21,13 +24,18 @@ const MAX_TEXT = 8000;
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
+const MODES: { id: Mode; label: string; Icon: typeof MessageSquareText }[] = [
+  { id: "MESSAGE", label: "Text", Icon: MessageSquareText },
+  { id: "URL", label: "URL", Icon: Link2 },
+  { id: "SCREENSHOT", label: "Image", Icon: ImageUp },
+];
+
 /**
  * Progress stages.
  *
- * These name real steps in the server pipeline rather than inventing reassuring
- * filler. We advance through them on a timer because the server returns one
- * response, so this is presentation — it never claims a step finished that did
- * not run, and the last stage holds until the real response lands.
+ * These name real steps in the server pipeline. We advance through them on a
+ * timer because the server returns one response, so this is presentation — the
+ * last stage holds until the real response lands.
  */
 const STAGES = [
   "Extracting text and links",
@@ -36,35 +44,19 @@ const STAGES = [
   "Building your report",
 ];
 
-/** Fictional demo specimens. `.example` is reserved and cannot resolve. */
-const EXAMPLES = [
-  {
-    id: "banking",
-    label: "Bank KYC warning",
-    text: "URGENT: Your SBI account will be blocked today.\nComplete KYC immediately at:\nhttps://sbi-secure-login.example",
-  },
-  {
-    id: "internship",
-    label: "Internship offer",
-    text: "Congratulations! You have been selected for a ₹60,000/month work-from-home internship with no experience required. Pay ₹1,999 registration fee to confirm your position before 6 PM today.",
-  },
-  {
-    id: "upi",
-    label: "Refund request",
-    text: "Sir your refund of ₹5,000 is approved. Please scan this QR code and enter your UPI PIN to receive the amount in your account.",
-  },
-  {
-    id: "ordinary",
-    label: "An ordinary message",
-    text: "Hi Ma, reaching home by 8 tonight. Do you need anything from the market? Also Priya called, she said she'll come over on Sunday.",
-  },
-];
+function formatBytes(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 export function Analyzer() {
+  const baseId = useId();
   const [mode, setMode] = useState<Mode>("MESSAGE");
   const [text, setText] = useState("");
   const [url, setUrl] = useState("");
-  const [imageData, setImageData] = useState<{ base64: string; mimeType: string; preview: string } | null>(null);
+  const [imageData, setImageData] = useState<
+    { base64: string; mimeType: string; preview: string; name: string; size: number } | null
+  >(null);
   const [dragging, setDragging] = useState(false);
 
   const [loading, setLoading] = useState(false);
@@ -74,8 +66,11 @@ export function Analyzer() {
   const [saved, setSaved] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
   const [visionAvailable, setVisionAvailable] = useState<boolean | null>(null);
+  const [canPaste, setCanPaste] = useState(false);
 
   const resultRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement | HTMLInputElement | null>(null);
+  const tabRefs = useRef<Record<Mode, HTMLButtonElement | null>>({ MESSAGE: null, URL: null, SCREENSHOT: null });
   const stageTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Ask the server whether the configured model supports vision, so the
@@ -95,6 +90,20 @@ export function Analyzer() {
     };
   }, []);
 
+  // Pick up a draft handed over from the landing demo or scam library.
+  useEffect(() => {
+    setCanPaste(typeof navigator !== "undefined" && Boolean(navigator.clipboard?.readText));
+    const draft = takeAnalyzerDraft();
+    if (!draft) return;
+    if (draft.mode === "URL") {
+      setMode("URL");
+      setUrl(draft.value);
+    } else {
+      setMode("MESSAGE");
+      setText(draft.value);
+    }
+  }, []);
+
   useEffect(() => {
     return () => {
       if (stageTimer.current) clearInterval(stageTimer.current);
@@ -105,7 +114,6 @@ export function Analyzer() {
     setStage(0);
     if (stageTimer.current) clearInterval(stageTimer.current);
     stageTimer.current = setInterval(() => {
-      // Hold on the final stage until the real response arrives.
       setStage((s) => (s < STAGES.length - 1 ? s + 1 : s));
     }, 900);
   }, []);
@@ -117,15 +125,19 @@ export function Analyzer() {
     }
   }, []);
 
-  const reset = useCallback(() => {
+  const clearInput = useCallback(() => {
     setText("");
     setUrl("");
     setImageData(null);
-    setReport(null);
     setError(null);
+  }, []);
+
+  const reset = useCallback(() => {
+    clearInput();
+    setReport(null);
     setSaved(false);
     setSaveFailed(false);
-  }, []);
+  }, [clearInput]);
 
   const handleFile = useCallback((file: File) => {
     setError(null);
@@ -147,13 +159,50 @@ export function Analyzer() {
         setError("That file could not be read. Try a different screenshot.");
         return;
       }
-      setImageData({ base64, mimeType: file.type, preview: result });
+      setImageData({ base64, mimeType: file.type, preview: result, name: file.name || "Pasted image", size: file.size });
     };
     reader.onerror = () => setError("That file could not be read. Try a different screenshot.");
     reader.readAsDataURL(file);
   }, []);
 
+  // In image mode, a pasted image (Ctrl/Cmd+V) is accepted anywhere on the page.
+  useEffect(() => {
+    if (mode !== "SCREENSHOT") return;
+    const onPaste = (event: ClipboardEvent) => {
+      const file = Array.from(event.clipboardData?.files ?? []).find((f) => f.type.startsWith("image/"));
+      if (file) {
+        event.preventDefault();
+        handleFile(file);
+      }
+    };
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  }, [mode, handleFile]);
+
+  const pasteFromClipboard = useCallback(async () => {
+    try {
+      const value = await navigator.clipboard.readText();
+      if (!value) {
+        setError("Your clipboard is empty.");
+        return;
+      }
+      setError(null);
+      if (mode === "URL") setUrl(value.trim());
+      else setText(value.slice(0, MAX_TEXT + 500));
+      inputRef.current?.focus();
+    } catch {
+      setError("Clipboard access was blocked. Paste with Ctrl+V (or ⌘V) instead.");
+    }
+  }, [mode]);
+
+  const canSubmit =
+    !loading &&
+    ((mode === "MESSAGE" && text.trim().length >= 3 && text.length <= MAX_TEXT) ||
+      (mode === "URL" && url.trim().length >= 4) ||
+      (mode === "SCREENSHOT" && imageData !== null));
+
   const analyze = useCallback(async () => {
+    if (!canSubmit) return;
     setError(null);
     setReport(null);
     setSaved(false);
@@ -193,8 +242,9 @@ export function Analyzer() {
       // Move focus to the result so keyboard and screen reader users are taken
       // to the thing they just asked for.
       window.requestAnimationFrame(() => {
-        resultRef.current?.focus();
-        resultRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+        const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        resultRef.current?.focus({ preventScroll: true });
+        resultRef.current?.scrollIntoView({ block: "start", behavior: calm ? "auto" : "smooth" });
       });
     } catch {
       setError("Could not reach the analyzer. Check your connection and try again.");
@@ -202,188 +252,368 @@ export function Analyzer() {
       setLoading(false);
       stopStages();
     }
-  }, [mode, text, url, imageData, startStages, stopStages]);
+  }, [canSubmit, mode, text, url, imageData, startStages, stopStages]);
 
   const handleSave = useCallback(() => {
     if (!report) return;
     const ok = saveReport(report);
-    if (ok) {
-      setSaved(true);
-      setSaveFailed(false);
-    } else {
-      setSaveFailed(true);
-    }
+    setSaved(ok);
+    setSaveFailed(!ok);
   }, [report]);
 
-  const canSubmit =
-    !loading &&
-    ((mode === "MESSAGE" && text.trim().length >= 3 && text.length <= MAX_TEXT) ||
-      (mode === "URL" && url.trim().length >= 4) ||
-      (mode === "SCREENSHOT" && imageData !== null));
+  const analyzeAnother = useCallback(() => {
+    reset();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 350);
+  }, [reset]);
+
+  const selectMode = useCallback((next: Mode, focusTab = false) => {
+    setMode(next);
+    setError(null);
+    if (focusTab) tabRefs.current[next]?.focus();
+  }, []);
+
+  // WAI-ARIA tabs: arrow keys move between tabs, Home/End jump to the ends.
+  const onTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    const index = MODES.findIndex((m) => m.id === mode);
+    let next = -1;
+    if (event.key === "ArrowRight") next = (index + 1) % MODES.length;
+    else if (event.key === "ArrowLeft") next = (index - 1 + MODES.length) % MODES.length;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = MODES.length - 1;
+    if (next >= 0) {
+      event.preventDefault();
+      selectMode(MODES[next].id, true);
+    }
+  };
+
+  // Ctrl/Cmd + Enter submits from anywhere inside the console.
+  const onConsoleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
+      void analyze();
+    }
+  };
+
+  const statusLabel = loading ? "SCANNING" : report ? "COMPLETE" : canSubmit ? "READY" : "AWAITING INPUT";
+  const panelId = `${baseId}-panel`;
+  const tabId = (m: Mode) => `${baseId}-tab-${m}`;
+  const inputEmpty = mode === "MESSAGE" ? text.length === 0 : mode === "URL" ? url.length === 0 : imageData === null;
 
   return (
     <>
-      <div className={styles.card} style={{ padding: 24 }}>
-        <div className={styles.tabs} role="tablist" aria-label="What do you want to check?">
-          {(["MESSAGE", "URL", "SCREENSHOT"] as Mode[]).map((m) => (
-            <button
-              key={m}
-              type="button"
-              role="tab"
-              aria-selected={mode === m}
-              className={mode === m ? `${styles.tab} ${styles.tabActive}` : styles.tab}
-              onClick={() => {
-                setMode(m);
-                setError(null);
-              }}
-            >
-              {m === "MESSAGE" ? "Message" : m === "URL" ? "Link" : "Screenshot"}
-            </button>
-          ))}
+      <div
+        className={loading ? `${styles.console} ${styles.consoleBusy}` : styles.console}
+        onKeyDown={onConsoleKeyDown}
+      >
+        <div className={styles.consoleBar}>
+          <div className={styles.tabs} role="tablist" aria-label="What do you want to check?">
+            {MODES.map(({ id, label, Icon }) => {
+              const selected = mode === id;
+              return (
+                <button
+                  key={id}
+                  ref={(el) => {
+                    tabRefs.current[id] = el;
+                  }}
+                  id={tabId(id)}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  aria-controls={panelId}
+                  tabIndex={selected ? 0 : -1}
+                  className={selected ? `${styles.tab} ${styles.tabActive}` : styles.tab}
+                  onClick={() => selectMode(id)}
+                  onKeyDown={onTabKeyDown}
+                  disabled={loading}
+                >
+                  <Icon size={15} aria-hidden="true" />
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
+          <span className={styles.consoleStatus} aria-live="polite">
+            <span
+              className={
+                loading
+                  ? `${styles.statusDot} ${styles.statusDotBusy}`
+                  : canSubmit || report
+                    ? styles.statusDot
+                    : `${styles.statusDot} ${styles.statusDotIdle}`
+              }
+              aria-hidden="true"
+            />
+            {statusLabel}
+          </span>
         </div>
 
-        {mode === "MESSAGE" && (
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="message-input">
-              Paste the message you received
-            </label>
-            <textarea
-              id="message-input"
-              className={styles.textarea}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Paste the full message here, including any links..."
-              maxLength={MAX_TEXT + 500}
-            />
-            <div className={styles.metaRow}>
-              <span>Nothing is stored unless you choose to save the report.</span>
-              <span className={text.length > MAX_TEXT ? styles.countOver : undefined}>
-                {text.length.toLocaleString()} / {MAX_TEXT.toLocaleString()}
-              </span>
-            </div>
-          </div>
-        )}
+        <div id={panelId} role="tabpanel" aria-labelledby={tabId(mode)} className={styles.consoleBody}>
+          {loading && <div className={styles.consoleScan} aria-hidden="true" />}
 
-        {mode === "URL" && (
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="url-input">
-              Paste the link
-            </label>
-            <input
-              id="url-input"
-              type="text"
-              inputMode="url"
-              className={styles.input}
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="sbi-secure-login.example/kyc"
-            />
-            <div className={styles.metaRow}>
-              <span>The link is read as text. ScamShield never opens or expands it.</span>
-            </div>
-          </div>
-        )}
+          {mode === "MESSAGE" && (
+            <>
+              <label className={styles.consoleLabel} htmlFor="message-input">
+                PASTE THE MESSAGE YOU RECEIVED
+              </label>
+              <textarea
+                id="message-input"
+                ref={(el) => {
+                  inputRef.current = el;
+                }}
+                className={styles.consoleTextarea}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="e.g. “URGENT: Your account will be blocked today. Verify at…”"
+                maxLength={MAX_TEXT + 500}
+                readOnly={loading}
+                aria-describedby="message-meta"
+              />
+              <div className={styles.consoleMeta} id="message-meta">
+                <span>Include any links &mdash; they are read as text, never opened.</span>
+                <span className={`${styles.metaMono} ${text.length > MAX_TEXT ? styles.countOver : ""}`}>
+                  {text.length.toLocaleString()} / {MAX_TEXT.toLocaleString()}
+                </span>
+              </div>
+            </>
+          )}
 
-        {mode === "SCREENSHOT" && (
-          <div className={styles.field}>
-            {visionAvailable === false && (
-              <p className={`${styles.notice} ${styles.noticeWarn}`} style={{ marginTop: 0 }}>
-                Screenshot analysis requires a vision-capable Gemini model, which is not configured
-                right now. Paste the message text instead &mdash; it gets the same analysis.
-              </p>
-            )}
-
-            <div
-              className={dragging ? `${styles.drop} ${styles.dropActive}` : styles.drop}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragging(true);
-              }}
-              onDragLeave={() => setDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragging(false);
-                const file = e.dataTransfer.files?.[0];
-                if (file) handleFile(file);
-              }}
-            >
-              <label className={styles.btnGhost} htmlFor="file-input" style={{ cursor: "pointer" }}>
-                Choose a screenshot
+          {mode === "URL" && (
+            <>
+              <label className={styles.consoleLabel} htmlFor="url-input">
+                PASTE THE LINK
               </label>
               <input
-                id="file-input"
-                type="file"
-                accept={ACCEPTED_TYPES.join(",")}
-                style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleFile(file);
+                id="url-input"
+                ref={(el) => {
+                  inputRef.current = el;
                 }}
+                type="text"
+                inputMode="url"
+                autoComplete="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                className={styles.consoleInput}
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.metaKey && !e.ctrlKey) {
+                    e.preventDefault();
+                    void analyze();
+                  }
+                }}
+                placeholder="sbi-secure-login.example/kyc"
+                readOnly={loading}
+                aria-describedby="url-meta"
               />
-              <p className={styles.dropHint}>or drag one here &middot; PNG, JPEG or WebP, up to 4MB</p>
-
-              {imageData && (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={imageData.preview} alt="Screenshot preview" className={styles.preview} />
-              )}
-            </div>
-          </div>
-        )}
-
-        {error && <p className={`${styles.notice} ${styles.noticeError}`} role="alert">{error}</p>}
-
-        {loading && (
-          <div className={styles.stages} aria-live="polite">
-            {STAGES.map((label, i) => (
-              <div key={label} className={i <= stage ? `${styles.stage} ${styles.stageOn}` : styles.stage}>
-                <span className={i === stage ? `${styles.stageDot} ${styles.stageDotOn}` : styles.stageDot} />
-                {label}
+              <div className={styles.consoleMeta} id="url-meta">
+                <span>ScamShield parses the address. It never opens, resolves or expands it.</span>
               </div>
-            ))}
-          </div>
-        )}
+            </>
+          )}
 
-        <div className={styles.actions}>
-          <button type="button" className={styles.btnPrimary} onClick={analyze} disabled={!canSubmit}>
-            {loading ? "Analysing…" : "Analyze threat"}
-          </button>
-          <button type="button" className={styles.btnGhost} onClick={reset} disabled={loading}>
-            Clear
-          </button>
-        </div>
+          {mode === "SCREENSHOT" && (
+            <>
+              {visionAvailable === false && (
+                <p className={`${styles.notice} ${styles.noticeWarn}`} style={{ margin: "14px 14px 0" }}>
+                  <span className={styles.noticeIcon} aria-hidden="true">!</span>
+                  <span>
+                    Screenshot analysis needs a vision-capable Gemini model, which isn&rsquo;t
+                    configured right now. Paste the message as text instead &mdash; it gets the same
+                    analysis.
+                  </span>
+                </p>
+              )}
 
-        {mode === "MESSAGE" && !report && (
-          <div className={styles.examples}>
-            <p className={styles.examplesTitle}>
-              Or try a fictional example. These are made up, and the domains cannot resolve.
-            </p>
-            <div className={styles.exampleRow}>
-              {EXAMPLES.map((example) => (
-                <button
-                  key={example.id}
-                  type="button"
-                  className={styles.exampleBtn}
-                  onClick={() => {
-                    setText(example.text);
-                    setError(null);
+              {imageData ? (
+                <div className={styles.previewWrap}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={imageData.preview} alt="Preview of the screenshot to analyze" className={styles.preview} />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <p className={styles.previewName}>{imageData.name}</p>
+                    <p className={styles.previewMeta}>
+                      {imageData.mimeType.replace("image/", "").toUpperCase()} &middot; {formatBytes(imageData.size)}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.iconBtn}
+                    onClick={() => setImageData(null)}
+                    aria-label="Remove screenshot"
+                    disabled={loading}
+                  >
+                    <X size={16} aria-hidden="true" />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  className={[
+                    styles.drop,
+                    dragging ? styles.dropActive : "",
+                    visionAvailable === false ? styles.dropDisabled : "",
+                  ].join(" ")}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragging(true);
+                  }}
+                  onDragLeave={() => setDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragging(false);
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) handleFile(file);
                   }}
                 >
-                  {example.label}
-                </button>
-              ))}
-            </div>
+                  <ImageUp size={28} className={styles.dropIcon} aria-hidden="true" />
+                  <p className={styles.dropTitle}>Drop a screenshot here</p>
+                  <p className={styles.dropHint}>
+                    or paste one with Ctrl+V &middot; PNG, JPEG or WebP, up to 4MB
+                  </p>
+                  <label className={`${styles.btnGhost} ${styles.btnSm}`} htmlFor="file-input">
+                    Choose a file
+                  </label>
+                  <input
+                    id="file-input"
+                    type="file"
+                    accept={ACCEPTED_TYPES.join(",")}
+                    className="sr-only"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleFile(file);
+                      e.target.value = "";
+                    }}
+                  />
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className={styles.consoleFoot}>
+          <div className={styles.consoleFootLeft}>
+            {mode !== "SCREENSHOT" && canPaste && (
+              <button type="button" className={styles.btnQuiet} onClick={pasteFromClipboard} disabled={loading}>
+                <ClipboardPaste size={15} aria-hidden="true" />
+                Paste
+              </button>
+            )}
+            <button type="button" className={styles.btnQuiet} onClick={clearInput} disabled={loading || inputEmpty}>
+              Clear
+            </button>
           </div>
-        )}
+
+          <div className={styles.consoleFootRight}>
+            <span className={styles.shortcutHint} aria-hidden="true">
+              <kbd className={styles.kbd}>Ctrl</kbd>+<kbd className={styles.kbd}>Enter</kbd>
+            </span>
+            <button type="button" className={styles.btnPrimary} onClick={analyze} disabled={!canSubmit}>
+              {loading ? "Analyzing…" : "Analyze threat"}
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div ref={resultRef} tabIndex={-1} style={{ outline: "none" }}>
+      {error && (
+        <p className={`${styles.notice} ${styles.noticeError}`} role="alert">
+          <span className={styles.noticeIcon} aria-hidden="true">&times;</span>
+          <span>{error}</span>
+        </p>
+      )}
+
+      {loading && (
+        <div className={styles.progress} role="status" aria-live="polite">
+          <div className={styles.progressTop}>
+            <span>ANALYSIS IN PROGRESS</span>
+            <span>
+              {stage + 1}/{STAGES.length}
+            </span>
+          </div>
+          <div className={styles.progressBar} aria-hidden="true">
+            <div className={styles.progressFill} style={{ width: `${((stage + 1) / (STAGES.length + 0.6)) * 100}%` }} />
+          </div>
+          <ol className={styles.stages}>
+            {STAGES.map((label, i) => {
+              const done = i < stage;
+              const on = i === stage;
+              return (
+                <li
+                  key={label}
+                  className={`${styles.stage} ${on ? styles.stageOn : ""} ${done ? styles.stageDone : ""}`}
+                >
+                  <span
+                    className={`${styles.stageMark} ${on ? styles.stageMarkOn : ""} ${done ? styles.stageMarkDone : ""}`}
+                    aria-hidden="true"
+                  >
+                    {done ? "✓" : ""}
+                  </span>
+                  {label}
+                  {done && <span className="sr-only"> (done)</span>}
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      )}
+
+      {!report && !loading && (
+        <>
+          {mode !== "SCREENSHOT" && (
+            <div className={styles.examples}>
+              <p className={styles.examplesTitle}>
+                No message handy? Try a fictional example &mdash; the domains cannot resolve.
+              </p>
+              <div className={styles.chipRow}>
+                {(mode === "MESSAGE" ? MESSAGE_EXAMPLES : URL_EXAMPLES).map((example) => (
+                  <button
+                    key={example.id}
+                    type="button"
+                    className={styles.chip}
+                    onClick={() => {
+                      if (mode === "URL") setUrl(example.text);
+                      else setText(example.text);
+                      setError(null);
+                      inputRef.current?.focus();
+                    }}
+                  >
+                    {example.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className={styles.expect}>
+            <div className={styles.expectItem}>
+              <span className={styles.expectNum}>01 &middot; SCORE</span>
+              <p className={styles.expectName}>A risk score out of 100</p>
+              <p className={styles.expectText}>Pattern checks and AI, combined into one number you can audit.</p>
+            </div>
+            <div className={styles.expectItem}>
+              <span className={styles.expectNum}>02 &middot; EVIDENCE</span>
+              <p className={styles.expectName}>Why it was flagged</p>
+              <p className={styles.expectText}>The exact phrases and link details that raised each signal.</p>
+            </div>
+            <div className={styles.expectItem}>
+              <span className={styles.expectNum}>03 &middot; ACTION</span>
+              <p className={styles.expectName}>What to do next</p>
+              <p className={styles.expectText}>Specific steps for this kind of scam, not a generic warning.</p>
+            </div>
+          </div>
+        </>
+      )}
+
+      <div ref={resultRef} tabIndex={-1} style={{ outline: "none", scrollMarginTop: 88 }}>
         {report && (
           <div style={{ marginTop: 40 }}>
-            <ReportView report={report} onSave={handleSave} saved={saved} />
+            <ReportView report={report} onSave={handleSave} saved={saved} onAnalyzeAnother={analyzeAnother} />
             {saveFailed && (
               <p className={`${styles.notice} ${styles.noticeWarn}`}>
-                This report could not be saved. Your browser may be blocking storage, or private
-                browsing may be on.
+                <span className={styles.noticeIcon} aria-hidden="true">!</span>
+                <span>
+                  This report could not be saved. Your browser may be blocking storage, or private
+                  browsing may be on.
+                </span>
               </p>
             )}
           </div>

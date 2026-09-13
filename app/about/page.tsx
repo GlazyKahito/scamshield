@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteNav } from "../../components/ui/site-nav";
+import { SiteFooter } from "../../components/ui/site-footer";
 import styles from "../../components/ui/pages.module.css";
 
 export const metadata: Metadata = {
@@ -66,7 +67,7 @@ export default function AboutPage() {
 
           <section className={styles.proseBlock}>
             <h2 className={styles.proseH}>The architecture</h2>
-            <div style={{ marginTop: 20 }}>
+            <div style={{ marginTop: 20, maxWidth: 720 }}>
               {ARCHITECTURE.map((stage, i) => (
                 <div key={stage.idx}>
                   <div className={stage.accent ? `${styles.archStep} ${styles.archAccent}` : styles.archStep}>
@@ -116,6 +117,8 @@ export default function AboutPage() {
           </div>
         </div>
       </main>
+
+      <SiteFooter />
     </div>
   );
 }

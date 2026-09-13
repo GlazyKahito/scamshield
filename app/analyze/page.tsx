@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SiteNav } from "../../components/ui/site-nav";
+import { SiteFooter } from "../../components/ui/site-footer";
 import { Analyzer } from "../../components/analyzer/analyzer";
 import styles from "../../components/ui/pages.module.css";
 
@@ -20,11 +21,11 @@ export default function AnalyzePage() {
 
       <header className={styles.head}>
         <div className={styles.shellNarrow}>
-          <p className={styles.eyebrow}>ANALYZER</p>
-          <h1 className={styles.title}>Check something suspicious</h1>
+          <p className={styles.eyebrow}>ANALYZER &middot; TEXT &bull; URL &bull; IMAGE</p>
+          <h1 className={styles.title}>Check something suspicious.</h1>
           <p className={styles.lead}>
-            Paste a message, a link, or a screenshot. You will get a risk score, the exact phrases
-            that triggered it, how the scam would work, and what to do next.
+            Paste a message, a link, or a screenshot. You&rsquo;ll get a risk score, the exact
+            evidence behind it, how the scam would work, and what to do next.
           </p>
         </div>
       </header>
@@ -34,6 +35,8 @@ export default function AnalyzePage() {
           <Analyzer />
         </div>
       </main>
+
+      <SiteFooter />
     </div>
   );
 }

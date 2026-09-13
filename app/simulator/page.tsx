@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SCENARIOS } from "../../lib/content/scenarios";
 import { saveSimulatorAnswer } from "../../lib/storage/history";
 import { SiteNav } from "../../components/ui/site-nav";
+import { SiteFooter } from "../../components/ui/site-footer";
 import styles from "../../components/ui/pages.module.css";
 
 /**
@@ -13,176 +14,308 @@ import styles from "../../components/ui/pages.module.css";
  * All scenarios are fictional and labelled as such in the UI. The explanation
  * after each answer is the point: being told you were wrong teaches nothing
  * without the mechanic behind it.
+ *
+ * Keyboard: 1–4 choose an answer, Enter moves on once answered.
  */
+
+type Answer = { scenarioId: string; optionId: string; correct: boolean };
+
 export default function SimulatorPage() {
   const [index, setIndex] = useState(0);
-  const [choice, setChoice] = useState<string | null>(null);
-  const [correctCount, setCorrectCount] = useState(0);
+  const [answers, setAnswers] = useState<Answer[]>([]);
   const [finished, setFinished] = useState(false);
+  const feedbackRef = useRef<HTMLDivElement>(null);
+  const questionRef = useRef<HTMLHeadingElement>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
 
   const scenario = SCENARIOS[index];
+  const current = answers.find((a) => a.scenarioId === scenario.id);
+  const choice = current?.optionId ?? null;
   const answered = choice !== null;
-  const isCorrect = answered && choice === scenario.correctOptionId;
+  const isCorrect = Boolean(current?.correct);
+  const correctCount = answers.filter((a) => a.correct).length;
+  const isLast = index + 1 >= SCENARIOS.length;
 
   const answer = useCallback(
     (optionId: string) => {
-      if (choice !== null) return;
-      setChoice(optionId);
+      if (answered) return;
       const correct = optionId === scenario.correctOptionId;
-      if (correct) setCorrectCount((c) => c + 1);
-      saveSimulatorAnswer({
-        scenarioId: scenario.id,
-        correct,
-        at: new Date().toISOString(),
+      setAnswers((list) => [...list, { scenarioId: scenario.id, optionId, correct }]);
+      saveSimulatorAnswer({ scenarioId: scenario.id, correct, at: new Date().toISOString() });
+      window.requestAnimationFrame(() => {
+        const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        feedbackRef.current?.scrollIntoView({ block: "nearest", behavior: calm ? "auto" : "smooth" });
       });
     },
-    [choice, scenario],
+    [answered, scenario],
   );
 
   const next = useCallback(() => {
-    if (index + 1 >= SCENARIOS.length) {
+    if (isLast) {
       setFinished(true);
+      window.requestAnimationFrame(() => resultRef.current?.focus());
       return;
     }
     setIndex((i) => i + 1);
-    setChoice(null);
-  }, [index]);
+    window.requestAnimationFrame(() => questionRef.current?.focus());
+  }, [isLast]);
 
   const restart = useCallback(() => {
     setIndex(0);
-    setChoice(null);
-    setCorrectCount(0);
+    setAnswers([]);
     setFinished(false);
   }, []);
 
-  const scorePct = useMemo(
-    () => Math.round((correctCount / SCENARIOS.length) * 100),
-    [correctCount],
-  );
+  useEffect(() => {
+    if (finished) return;
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) return;
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+
+      const n = Number.parseInt(event.key, 10);
+      if (!answered && n >= 1 && n <= scenario.options.length) {
+        event.preventDefault();
+        answer(scenario.options[n - 1].id);
+      } else if (answered && event.key === "Enter" && target?.tagName !== "BUTTON" && target?.tagName !== "A") {
+        event.preventDefault();
+        next();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [finished, answered, scenario, answer, next]);
+
+  const scorePct = useMemo(() => Math.round((correctCount / SCENARIOS.length) * 100), [correctCount]);
+
+  const resultCopy =
+    scorePct >= 80
+      ? { title: "Sharp instincts.", color: "var(--green)" }
+      : scorePct >= 50
+        ? { title: "Good — with a few gaps.", color: "var(--amber-soft)" }
+        : { title: "These are built to fool people.", color: "var(--danger-soft)" };
 
   return (
     <div className={styles.page}>
       <SiteNav />
 
       <header className={styles.head}>
-        <div className={styles.shellNarrow}>
-          <p className={styles.eyebrow}>SCAM RADAR</p>
+        <div className={styles.shell}>
+          <p className={styles.eyebrow}>SCAM SIMULATOR</p>
           <h1 className={styles.title}>Would you have spotted it?</h1>
           <p className={styles.lead}>
-            Five realistic scenarios. Every message here is invented for training &mdash; no real
-            links, numbers or accounts appear anywhere in this simulator.
+            {SCENARIOS.length} realistic scenarios. Every message here is invented for training
+            &mdash; no real links, numbers or accounts appear anywhere in this simulator.
           </p>
         </div>
       </header>
 
       <main className={styles.body}>
-        <div className={styles.shellNarrow}>
+        <div className={styles.shell}>
           {finished ? (
-            <div className={styles.card} style={{ padding: 34, textAlign: "center" }}>
-              <p className={styles.eyebrow}>YOUR RESULT</p>
-              <p className={styles.statBig} style={{ fontSize: 54, color: "#22d3ee" }}>{scorePct}%</p>
-              <p className={styles.emptyText} style={{ marginTop: 16 }}>
+            <div
+              ref={resultRef}
+              tabIndex={-1}
+              className={styles.result}
+              style={{ maxWidth: 720, margin: "0 auto", outline: "none" }}
+            >
+              <p className={styles.eyebrow} style={{ marginBottom: 0 }}>YOUR RESULT</p>
+              <p className={styles.resultScore} style={{ color: resultCopy.color }}>{scorePct}%</p>
+              <p className={styles.resultTitle}>{resultCopy.title}</p>
+              <p className={styles.resultText}>
                 You identified {correctCount} of {SCENARIOS.length} correctly. The pattern worth
                 carrying out of this: every one of these scams needed you to act before checking.
-                Slowing down defeats all five.
+                Slowing down defeats all of them.
               </p>
-              <div className={styles.actions} style={{ justifyContent: "center" }}>
+
+              <ul className={styles.review}>
+                {SCENARIOS.map((s, i) => {
+                  const a = answers.find((x) => x.scenarioId === s.id);
+                  const ok = Boolean(a?.correct);
+                  return (
+                    <li key={s.id} className={styles.reviewItem}>
+                      <span
+                        className={styles.reviewMark}
+                        style={{
+                          color: ok ? "var(--green)" : "var(--danger-soft)",
+                          background: ok ? "rgba(52,211,153,0.14)" : "rgba(239,68,68,0.14)",
+                        }}
+                        aria-hidden="true"
+                      >
+                        {ok ? "✓" : "✕"}
+                      </span>
+                      <span>
+                        <span className="sr-only">{ok ? "Correct: " : "Missed: "}</span>
+                        Scenario {i + 1} &middot; {s.sender}
+                      </span>
+                      <span className={styles.reviewCat}>{s.category}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              <div className={styles.actions} style={{ justifyContent: "center", marginTop: 28 }}>
                 <button type="button" className={styles.btnPrimary} onClick={restart}>
                   Try again
                 </button>
                 <Link href="/scams" className={styles.btnGhost}>Read the scam library</Link>
+                <Link href="/dashboard" className={styles.btnGhost}>See your dashboard</Link>
               </div>
             </div>
           ) : (
-            <>
-              <div className={styles.progressRow}>
-                <span className={styles.progressText}>
-                  Scenario {index + 1} of {SCENARIOS.length} &middot; {scenario.category}
-                </span>
-                <span className={styles.scorePill}>
-                  {correctCount} correct so far
-                </span>
+            <div className={styles.simLayout}>
+              {/* Phone */}
+              <div>
+                <div className={styles.device} aria-label={`Fictional ${scenario.channel} message`} role="figure">
+                  <div className={styles.deviceScreen}>
+                    <div className={styles.deviceStatus} aria-hidden="true">
+                      <span>9:41</span>
+                      <span>{scenario.channel.toUpperCase()}</span>
+                    </div>
+                    <div className={styles.deviceHeader}>
+                      <span className={styles.avatar} aria-hidden="true">
+                        {scenario.sender.replace(/[^A-Za-z0-9]/g, "").charAt(0).toUpperCase() || "?"}
+                      </span>
+                      <span style={{ minWidth: 0 }}>
+                        <span className={styles.simSender}>{scenario.sender}</span>
+                        <span className={styles.simChannel}>{scenario.channel}</span>
+                      </span>
+                      <span className={styles.simDemoTag}>FICTIONAL</span>
+                    </div>
+                    <div className={styles.deviceThread}>
+                      <p key={scenario.id} className={styles.bubble}>{scenario.message}</p>
+                      <span className={styles.bubbleTime} aria-hidden="true">Today &middot; just now</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className={styles.simMsg}>
-                <div className={styles.simMsgHead}>
-                  <span>
-                    <span className={styles.simSender}>{scenario.sender}</span>
-                    <span className={styles.simChannel}> &middot; {scenario.channel}</span>
+              {/* Question */}
+              <div>
+                <div className={styles.progressRow}>
+                  <span className={styles.progressText}>
+                    SCENARIO {index + 1} / {SCENARIOS.length} &middot; {scenario.category.toUpperCase()}
                   </span>
-                  <span className={styles.simDemoTag}>FICTIONAL EXAMPLE</span>
+                  <span className={styles.scorePill}>{correctCount} correct</span>
                 </div>
-                <p className={styles.simText}>{scenario.message}</p>
-              </div>
 
-              <h2 className={styles.sectionH} style={{ marginTop: 30, marginBottom: 0 }}>
-                {scenario.question}
-              </h2>
+                <div
+                  className={styles.segments}
+                  role="progressbar"
+                  aria-valuemin={1}
+                  aria-valuemax={SCENARIOS.length}
+                  aria-valuenow={index + 1}
+                  aria-label="Simulator progress"
+                >
+                  {SCENARIOS.map((s, i) => {
+                    const a = answers.find((x) => x.scenarioId === s.id);
+                    const cls = a
+                      ? a.correct
+                        ? styles.segmentRight
+                        : styles.segmentWrong
+                      : i === index
+                        ? styles.segmentCurrent
+                        : "";
+                    return <span key={s.id} className={`${styles.segment} ${cls}`} />;
+                  })}
+                </div>
 
-              <div className={styles.optionList} role="group" aria-label={scenario.question}>
-                {scenario.options.map((option) => {
-                  const chosen = choice === option.id;
-                  const right = option.id === scenario.correctOptionId;
+                <h2 ref={questionRef} tabIndex={-1} className={styles.question} style={{ outline: "none" }}>
+                  {scenario.question}
+                </h2>
 
-                  let cls = styles.option;
-                  if (answered && right) cls = `${styles.option} ${styles.optionRight}`;
-                  else if (answered && chosen) cls = `${styles.option} ${styles.optionWrong}`;
-                  else if (answered) cls = `${styles.option} ${styles.optionDim}`;
+                <div className={styles.optionList} role="group" aria-label={scenario.question}>
+                  {scenario.options.map((option, i) => {
+                    const chosen = choice === option.id;
+                    const right = option.id === scenario.correctOptionId;
 
-                  return (
-                    <button
-                      key={option.id}
-                      type="button"
-                      className={cls}
-                      onClick={() => answer(option.id)}
-                      disabled={answered}
-                    >
-                      {option.text}
-                    </button>
-                  );
-                })}
-              </div>
+                    let cls = styles.option;
+                    let tag = "";
+                    if (answered && right) {
+                      cls = `${styles.option} ${styles.optionRight}`;
+                      tag = "SAFE";
+                    } else if (answered && chosen) {
+                      cls = `${styles.option} ${styles.optionWrong}`;
+                      tag = "RISKY";
+                    } else if (answered) {
+                      cls = `${styles.option} ${styles.optionDim}`;
+                    }
 
-              {answered && (
-                <div className={styles.feedback} aria-live="polite">
-                  <p
-                    className={styles.feedbackVerdict}
-                    style={{ color: isCorrect ? "#34d399" : "#f59e0b" }}
-                  >
-                    {isCorrect ? "That's the safe choice." : "That one would have cost you."}
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        className={cls}
+                        onClick={() => answer(option.id)}
+                        disabled={answered}
+                        aria-keyshortcuts={String(i + 1)}
+                      >
+                        <span className={styles.optionKey} aria-hidden="true">{i + 1}</span>
+                        <span>{option.text}</span>
+                        {tag && (
+                          <span
+                            className={styles.optionResult}
+                            style={{ color: tag === "SAFE" ? "var(--green)" : "var(--danger-soft)" }}
+                          >
+                            {chosen ? `YOUR PICK · ${tag}` : tag}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {!answered && (
+                  <p className={styles.progressText} style={{ marginTop: 14, letterSpacing: 0 }}>
+                    Tip: press <kbd className={styles.kbd}>1</kbd>&ndash;<kbd className={styles.kbd}>{scenario.options.length}</kbd> to answer.
                   </p>
+                )}
 
-                  <div className={styles.feedbackBlock}>
-                    <p className={styles.feedbackLabel}>THE TECHNIQUE</p>
-                    <p className={styles.feedbackText}>{scenario.technique}</p>
-                  </div>
+                {answered && (
+                  <div ref={feedbackRef} className={styles.feedback} aria-live="polite" style={{ scrollMarginBottom: 24 }}>
+                    <p
+                      className={styles.feedbackVerdict}
+                      style={{ color: isCorrect ? "var(--green)" : "var(--amber-soft)" }}
+                    >
+                      {isCorrect ? "That’s the safe choice." : "That one would have cost you."}
+                    </p>
 
-                  <div className={styles.feedbackBlock}>
-                    <p className={styles.feedbackLabel}>WHAT WOULD HAVE HAPPENED</p>
-                    <p className={styles.feedbackText}>{scenario.outcome}</p>
-                  </div>
+                    <div className={styles.feedbackGrid}>
+                      <div className={styles.feedbackBlock}>
+                        <p className={styles.feedbackLabel}>THE TECHNIQUE</p>
+                        <p className={styles.feedbackText}>{scenario.technique}</p>
+                      </div>
+                      <div className={styles.feedbackBlock}>
+                        <p className={styles.feedbackLabel}>WHAT WOULD HAVE HAPPENED</p>
+                        <p className={styles.feedbackText}>{scenario.outcome}</p>
+                      </div>
+                      <div className={styles.feedbackBlock}>
+                        <p className={styles.feedbackLabel}>THE WARNING SIGNS</p>
+                        <p className={styles.feedbackText}>{scenario.redFlags}</p>
+                      </div>
+                      <div className={styles.feedbackBlock}>
+                        <p className={styles.feedbackLabel}>THE SAFE ACTION</p>
+                        <p className={styles.feedbackText}>{scenario.correctAction}</p>
+                      </div>
+                    </div>
 
-                  <div className={styles.feedbackBlock}>
-                    <p className={styles.feedbackLabel}>THE WARNING SIGNS</p>
-                    <p className={styles.feedbackText}>{scenario.redFlags}</p>
+                    <div className={styles.feedbackActions}>
+                      <span className={styles.progressText} style={{ letterSpacing: 0 }}>
+                        Press <kbd className={styles.kbd}>Enter</kbd> to continue
+                      </span>
+                      <button type="button" className={styles.btnPrimary} onClick={next}>
+                        {isLast ? "See your result" : "Next scenario"} &rarr;
+                      </button>
+                    </div>
                   </div>
-
-                  <div className={styles.feedbackBlock}>
-                    <p className={styles.feedbackLabel}>THE SAFE ACTION</p>
-                    <p className={styles.feedbackText}>{scenario.correctAction}</p>
-                  </div>
-
-                  <div className={styles.actions}>
-                    <button type="button" className={styles.btnPrimary} onClick={next}>
-                      {index + 1 >= SCENARIOS.length ? "See your result" : "Next scenario"}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
+                )}
+              </div>
+            </div>
           )}
         </div>
       </main>
+
+      <SiteFooter />
     </div>
   );
 }

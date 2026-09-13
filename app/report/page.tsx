@@ -1,12 +1,12 @@
-"use client";
-
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import type { ThreatReport } from "../../types/analysis";
-import { getHistory } from "../../lib/storage/history";
-import { ReportView } from "../../components/report/report-view";
+import type { Metadata } from "next";
 import { SiteNav } from "../../components/ui/site-nav";
+import { SiteFooter } from "../../components/ui/site-footer";
+import { SavedReport } from "../../components/report/saved-report";
 import styles from "../../components/ui/pages.module.css";
+
+export const metadata: Metadata = {
+  title: "Latest report — ScamShield",
+};
 
 /**
  * /report — shows the most recent saved report.
@@ -15,14 +15,6 @@ import styles from "../../components/ui/pages.module.css";
  * at /report/[id].
  */
 export default function LatestReportPage() {
-  const [report, setReport] = useState<ThreatReport | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setReport(getHistory()[0] ?? null);
-    setLoading(false);
-  }, []);
-
   return (
     <div className={styles.page}>
       <SiteNav />
@@ -36,29 +28,11 @@ export default function LatestReportPage() {
 
       <main className={styles.body}>
         <div className={styles.shellNarrow}>
-          {loading && <p className={`${styles.notice} ${styles.noticeInfo}`}>Loading…</p>}
-
-          {!loading && !report && (
-            <div className={styles.empty}>
-              <p className={styles.emptyTitle}>No saved reports yet</p>
-              <p className={styles.emptyText}>
-                Analyse a message and choose &ldquo;Save this report&rdquo; to keep it here.
-              </p>
-              <Link href="/analyze" className={styles.btnPrimary}>Analyze something</Link>
-            </div>
-          )}
-
-          {!loading && report && (
-            <>
-              <ReportView report={report} />
-              <div className={styles.actions} style={{ marginTop: 36 }}>
-                <Link href="/analyze" className={styles.btnPrimary}>Check another message</Link>
-                <Link href="/dashboard" className={styles.btnGhost}>See all history</Link>
-              </div>
-            </>
-          )}
+          <SavedReport />
         </div>
       </main>
+
+      <SiteFooter />
     </div>
   );
 }
