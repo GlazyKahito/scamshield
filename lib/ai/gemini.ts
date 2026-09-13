@@ -170,8 +170,47 @@ async function callMuse(messages: unknown[]): Promise<AiResult> {
     });
 
     if (!response.ok) {
-      const errorBody = await response.text().catch(() => "");
-      throw new Error(`Muse API ${response.status}: ${errorBody.slice(0, 500)}`);
+      // Keep the provider failure visible enough to diagnose in the app,
+      // without exposing the API key or the provider's full response body.
+      const status = response.status;
+
+      if (status === 429) {
+        return {
+          ok: false,
+          reason: "RATE_LIMITED",
+          message: `Muse API returned HTTP 429 (rate limited). ScamShield is using local security checks.`,
+        };
+      }
+
+      if (status === 401) {
+        return {
+          ok: false,
+          reason: "PROVIDER_ERROR",
+          message: `Muse API returned HTTP 401 (authentication failed). Check MUSE_API_KEY in Vercel. ScamShield is using local security checks.`,
+        };
+      }
+
+      if (status === 403) {
+        return {
+          ok: false,
+          reason: "PROVIDER_ERROR",
+          message: `Muse API returned HTTP 403 (access denied). Check Meta Model API access for this key. ScamShield is using local security checks.`,
+        };
+      }
+
+      if (status === 400) {
+        return {
+          ok: false,
+          reason: "PROVIDER_ERROR",
+          message: `Muse API returned HTTP 400 (invalid request). ScamShield is using local security checks.`,
+        };
+      }
+
+      return {
+        ok: false,
+        reason: "PROVIDER_ERROR",
+        message: `Muse API returned HTTP ${status}. ScamShield is using local security checks.`,
+      };
     }
 
     const payload: unknown = await response.json();
