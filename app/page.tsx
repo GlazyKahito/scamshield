@@ -172,7 +172,7 @@ export default function Home() {
                     scored by the same engine as a pasted message.
                   </p>
                 </div>
-                <div className={styles.capVisual} aria-hidden="true" style={{ paddingBottom: 0 }}>
+                <div className={styles.capVisual} aria-hidden="true">
                   <div className={styles.shot}>
                     <div className={styles.shotScan} />
                     <div className={styles.shotBubble}>
