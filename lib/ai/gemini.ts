@@ -13,7 +13,7 @@ import "server-only";
  * path returns a typed result the caller can render honestly.
  */
 
-import { ApiError, GoogleGenAI, type GenerateContentResponse } from "@google/genai";
+import { ApiError, GoogleGenAI, ThinkingLevel, type GenerateContentConfig, type GenerateContentResponse } from "@google/genai";
 import { aiAnalysisSchema, GEMINI_RESPONSE_SCHEMA, normalizeAiAnalysis } from "./schema";
 import { buildAnalysisPrompt, buildImagePrompt, SYSTEM_INSTRUCTION } from "./prompts";
 import type { AiAnalysis } from "../../types/analysis";
@@ -22,6 +22,18 @@ const DEFAULT_MODEL = "gemini-3.8-flash";
 const TIMEOUT_MS = 20_000;
 /** Room for the full schema (up to ~9k tokens of text) plus any model reasoning tokens. */
 const MAX_OUTPUT_TOKENS = 8192;
+
+/**
+ * Gemini 3 tuning. Temperature stays at the model default (1.0): Google warns
+ * that lowering it on Gemini 3 can cause looping, which here surfaces as a
+ * truncated JSON body. Thinking is capped at LOW so the reply fits TIMEOUT_MS.
+ * Older models reject thinkingLevel, so they keep the low temperature instead.
+ */
+function generationTuning(model: string): Pick<GenerateContentConfig, "temperature" | "thinkingConfig"> {
+  return /gemini-[3-9]/i.test(model)
+    ? { thinkingConfig: { thinkingLevel: ThinkingLevel.LOW } }
+    : { temperature: 0.2 };
+}
 
 export type AiFailureReason =
   | "NO_API_KEY"
@@ -77,8 +89,10 @@ function getClient(apiKey: string): GoogleGenAI {
 /** Map provider errors onto our reasons without surfacing provider detail. */
 function classifyError(error: unknown): AiFailureReason {
   if (error instanceof ApiError) {
-    // Status only — the message can echo request details.
-    console.warn("[gemini] provider error status:", error.status);
+    // Status and Google's reason code only (e.g. API_KEY_INVALID) — the free
+    // text of the message can echo request details.
+    const code = /"reason":\s*"([A-Z_]+)"/.exec(error.message)?.[1] ?? /"status":\s*"([A-Z_]+)"/.exec(error.message)?.[1];
+    console.warn("[gemini] provider error status:", error.status, code ?? "");
     return error.status === 429 ? "RATE_LIMITED" : "PROVIDER_ERROR";
   }
   const text = error instanceof Error ? `${error.name} ${error.message}` : String(error);
@@ -146,9 +160,7 @@ export async function analyzeWithGemini(content: string, options: TextOptions = 
         systemInstruction: SYSTEM_INSTRUCTION,
         responseMimeType: "application/json",
         responseSchema: GEMINI_RESPONSE_SCHEMA,
-        // Low temperature: this is an assessment, not a creative task. We want
-        // the same message to score consistently across runs.
-        temperature: 0.2,
+        ...generationTuning(model),
         maxOutputTokens: MAX_OUTPUT_TOKENS,
         abortSignal: controller.signal,
       },
@@ -202,7 +214,7 @@ export async function analyzeImageWithGemini({ base64Data, mimeType }: ImageOpti
         systemInstruction: SYSTEM_INSTRUCTION,
         responseMimeType: "application/json",
         responseSchema: GEMINI_RESPONSE_SCHEMA,
-        temperature: 0.2,
+        ...generationTuning(model),
         maxOutputTokens: MAX_OUTPUT_TOKENS,
         abortSignal: controller.signal,
       },

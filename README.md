@@ -157,7 +157,7 @@ Add your key to `.env.local`:
 
 ```env
 GEMINI_API_KEY=your_key_here
-GEMINI_MODEL=gemini-2.0-flash
+GEMINI_MODEL=gemini-3.8-flash
 ```
 
 Get a free key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
