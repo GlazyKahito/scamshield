@@ -4,9 +4,9 @@ import { aiAnalysisSchema, normalizeAiAnalysis } from "./schema";
 import { buildAnalysisPrompt, buildImagePrompt, SYSTEM_INSTRUCTION } from "./prompts";
 import type { AiAnalysis } from "../../types/analysis";
 
-const DEFAULT_MODEL = "muse-spark-1.3";
-const DEFAULT_BASE_URL = "https://api.meta.ai/v1";
-const TIMEOUT_MS = 20_000;
+const DEFAULT_MODEL = "muse-spark-1.3-contributor-free";
+const DEFAULT_BASE_URL = "https://opencode.ai/zen/v1";
+const TIMEOUT_MS = 30_000;
 
 export type AiFailureReason =
   | "NO_API_KEY"
@@ -58,7 +58,10 @@ function classifyError(error: unknown): AiFailureReason {
   return "PROVIDER_ERROR";
 }
 
-function fail(reason: AiFailureReason): AiResult {
+function failure(reason: AiFailureReason, detail?: string): AiResult {
+  if (detail) {
+    return { ok: false, reason, message: detail };
+  }
   return { ok: false, reason, message: AI_FAILURE_MESSAGES[reason] };
 }
 
@@ -66,50 +69,32 @@ function extractResponseText(payload: unknown): string | undefined {
   if (!payload || typeof payload !== "object") return undefined;
 
   const data = payload as {
-    choices?: Array<{
-      message?: {
-        content?: unknown;
-      };
-    }>;
+    output_text?: unknown;
     output?: Array<{
+      type?: string;
       content?: Array<{
+        type?: string;
         text?: string;
       }>;
     }>;
   };
 
-  const chatContent = data.choices?.[0]?.message?.content;
-
-  if (typeof chatContent === "string") {
-    return chatContent;
+  if (typeof data.output_text === "string" && data.output_text.trim()) {
+    return data.output_text;
   }
 
-  if (Array.isArray(chatContent)) {
-    const text = chatContent
-      .map((part) => {
-        if (typeof part === "string") return part;
-        if (part && typeof part === "object" && "text" in part) {
-          return typeof part.text === "string" ? part.text : "";
-        }
-        return "";
-      })
-      .join("")
-      .trim();
-
-    if (text) return text;
-  }
-
-  const responseText = data.output
+  const text = data.output
     ?.flatMap((item) => item.content ?? [])
+    .filter((part) => part.type === "output_text" || typeof part.text === "string")
     .map((part) => part.text ?? "")
     .join("")
     .trim();
 
-  return responseText || undefined;
+  return text || undefined;
 }
 
 function validate(rawText: string | undefined): AiResult | { parsed: AiAnalysis } {
-  if (!rawText || rawText.trim().length === 0) return fail("EMPTY_RESPONSE");
+  if (!rawText || rawText.trim().length === 0) return failure("EMPTY_RESPONSE");
 
   const cleaned = rawText
     .replace(/^\s*```(?:json)?/i, "")
@@ -121,7 +106,7 @@ function validate(rawText: string | undefined): AiResult | { parsed: AiAnalysis 
   try {
     json = JSON.parse(cleaned);
   } catch {
-    return fail("INVALID_JSON");
+    return failure("INVALID_JSON");
   }
 
   const result = aiAnalysisSchema.safeParse(json);
@@ -131,7 +116,7 @@ function validate(rawText: string | undefined): AiResult | { parsed: AiAnalysis 
       "[muse] schema validation failed:",
       result.error.issues.map((issue) => issue.path.join(".")).join(", "),
     );
-    return fail("SCHEMA_VALIDATION_FAILED");
+    return failure("SCHEMA_VALIDATION_FAILED");
   }
 
   return { parsed: normalizeAiAnalysis(result.data) };
@@ -142,17 +127,29 @@ interface TextOptions {
   hostnames?: string[];
 }
 
-async function callMuse(messages: unknown[]): Promise<AiResult> {
+type MuseInputContent =
+  | string
+  | Array<
+      | { type: "input_text"; text: string }
+      | { type: "input_image"; image_url: string }
+    >;
+
+interface MuseInputMessage {
+  role: "user";
+  content: MuseInputContent;
+}
+
+async function callMuse(input: MuseInputMessage[]): Promise<AiResult> {
   const apiKey = process.env.MUSE_API_KEY?.trim();
 
-  if (!apiKey) return fail("NO_API_KEY");
+  if (!apiKey) return failure("NO_API_KEY");
 
   const model = getModelName();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const response = await fetch(`${getBaseUrl()}/chat/completions`, {
+    const response = await fetch(`${getBaseUrl()}/responses`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -160,57 +157,62 @@ async function callMuse(messages: unknown[]): Promise<AiResult> {
       },
       body: JSON.stringify({
         model,
-        messages,
+        instructions: SYSTEM_INSTRUCTION,
+        input,
         temperature: 0.2,
-        max_tokens: 2048,
-        response_format: { type: "json_object" },
+        max_output_tokens: 2048,
+        text: {
+          format: {
+            type: "json_object",
+          },
+        },
       }),
       signal: controller.signal,
       cache: "no-store",
     });
 
     if (!response.ok) {
-      // Keep the provider failure visible enough to diagnose in the app,
-      // without exposing the API key or the provider's full response body.
       const status = response.status;
 
-      if (status === 429) {
-        return {
-          ok: false,
-          reason: "RATE_LIMITED",
-          message: `Muse API returned HTTP 429 (rate limited). ScamShield is using local security checks.`,
-        };
-      }
-
       if (status === 401) {
-        return {
-          ok: false,
-          reason: "PROVIDER_ERROR",
-          message: `Muse API returned HTTP 401 (authentication failed). Check MUSE_API_KEY in Vercel. ScamShield is using local security checks.`,
-        };
+        return failure(
+          "PROVIDER_ERROR",
+          "Muse API returned HTTP 401 (authentication failed). Check the OpenCode Zen API key in MUSE_API_KEY.",
+        );
       }
 
       if (status === 403) {
-        return {
-          ok: false,
-          reason: "PROVIDER_ERROR",
-          message: `Muse API returned HTTP 403 (access denied). Check Meta Model API access for this key. ScamShield is using local security checks.`,
-        };
+        return failure(
+          "PROVIDER_ERROR",
+          "Muse API returned HTTP 403 (access denied). Check OpenCode Zen access for this key.",
+        );
+      }
+
+      if (status === 429) {
+        return failure(
+          "RATE_LIMITED",
+          "Muse Spark 1.3 Contributor Free is currently rate limited. ScamShield is using local security checks.",
+        );
       }
 
       if (status === 400) {
-        return {
-          ok: false,
-          reason: "PROVIDER_ERROR",
-          message: `Muse API returned HTTP 400 (invalid request). ScamShield is using local security checks.`,
-        };
+        return failure(
+          "PROVIDER_ERROR",
+          "Muse API returned HTTP 400 (invalid request). ScamShield is using local security checks.",
+        );
       }
 
-      return {
-        ok: false,
-        reason: "PROVIDER_ERROR",
-        message: `Muse API returned HTTP ${status}. ScamShield is using local security checks.`,
-      };
+      if (status >= 500) {
+        return failure(
+          "PROVIDER_ERROR",
+          `Muse API returned HTTP ${status} (provider error). ScamShield is using local security checks.`,
+        );
+      }
+
+      return failure(
+        "PROVIDER_ERROR",
+        `Muse API returned HTTP ${status}. ScamShield is using local security checks.`,
+      );
     }
 
     const payload: unknown = await response.json();
@@ -222,7 +224,7 @@ async function callMuse(messages: unknown[]): Promise<AiResult> {
 
     return validated;
   } catch (error) {
-    return fail(classifyError(error));
+    return failure(classifyError(error));
   } finally {
     clearTimeout(timer);
   }
@@ -234,12 +236,13 @@ export async function analyzeWithMuse(
 ): Promise<AiResult> {
   return callMuse([
     {
-      role: "system",
-      content: SYSTEM_INSTRUCTION,
-    },
-    {
       role: "user",
-      content: buildAnalysisPrompt(content, options),
+      content: [
+        {
+          type: "input_text",
+          text: buildAnalysisPrompt(content, options),
+        },
+      ],
     },
   ]);
 }
@@ -255,21 +258,15 @@ export async function analyzeImageWithMuse({
 }: ImageOptions): Promise<AiResult> {
   return callMuse([
     {
-      role: "system",
-      content: SYSTEM_INSTRUCTION,
-    },
-    {
       role: "user",
       content: [
         {
-          type: "text",
+          type: "input_text",
           text: buildImagePrompt(),
         },
         {
-          type: "image_url",
-          image_url: {
-            url: `data:${mimeType};base64,${base64Data}`,
-          },
+          type: "input_image",
+          image_url: `data:${mimeType};base64,${base64Data}`,
         },
       ],
     },
@@ -280,8 +277,7 @@ export async function analyzeImageWithMuse({
  * Compatibility exports.
  *
  * Existing ScamShield files can keep their current Gemini-named imports
- * while the provider is migrated. These aliases can be removed later when
- * the file itself is renamed from gemini.ts to muse.ts.
+ * while the provider is migrated. These aliases can be removed later.
  */
 export const analyzeWithGemini = analyzeWithMuse;
 export const analyzeImageWithGemini = analyzeImageWithMuse;
