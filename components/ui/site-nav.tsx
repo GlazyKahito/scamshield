@@ -116,7 +116,7 @@ export function ShieldMark({ size = 20 }: { size?: number }) {
         strokeWidth="1.4"
         strokeLinejoin="round"
       />
-      <path d="M6.5 10.4h9" stroke="#C8361E" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M6.5 10.4h9" stroke="#E5533A" strokeWidth="1.4" strokeLinecap="round" />
     </svg>
   );
 }

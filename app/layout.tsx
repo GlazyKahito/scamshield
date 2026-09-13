@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { DM_Sans, IBM_Plex_Mono } from "next/font/google";
+import { FluidParticlesBackground } from "../components/ui/fluid-particles-background";
 import "./globals.css";
 
 const sans = DM_Sans({
@@ -22,8 +23,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#F4F2EE",
-  colorScheme: "light",
+  themeColor: "#08090A",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({
@@ -33,7 +34,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${sans.variable} ${mono.variable}`}>
-      <body>{children}</body>
+      <body>
+        {/* Lives in the layout, so it persists across every route change. */}
+        <FluidParticlesBackground className="site-background" />
+        <div className="site-content">{children}</div>
+      </body>
     </html>
   );
 }

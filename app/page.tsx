@@ -1,20 +1,16 @@
 import Link from "next/link";
-import { ScamShieldHero } from "../components/ui/scamshield-hero";
+import { ThreatScanner } from "../components/threat-scanner/threat-scanner";
 import { LandingDemo } from "../components/ui/landing-demo";
 import { SiteNav } from "../components/ui/site-nav";
 import { SiteFooter } from "../components/ui/site-footer";
-import { FluidParticlesBackground } from "../components/ui/fluid-particles-background";
 import styles from "../components/ui/scamshield.module.css";
 
 /**
  * ScamShield landing page.
  *
- * Server component. Client JavaScript on this route is limited to the hero's
- * pointer tilt, the nav's mobile menu and the live demo, which runs the
- * deterministic engine locally.
- *
- * This page calls no API route. Every path to full analysis goes through
- * /analyze and the existing backend.
+ * Server component. Client JavaScript on this route is limited to the threat
+ * scanner hero (which calls the existing /api/analyze route), the nav's mobile
+ * menu and the live demo, which runs the deterministic engine locally.
  */
 
 const IMPOSTORS = ["Your bank", "Delivery firms", "Employers", "Payment apps", "Government offices"];
@@ -76,14 +72,10 @@ const PIPELINE = [
 export default function Home() {
   return (
     <div className={styles.root}>
-      <FluidParticlesBackground className={styles.backdrop} />
-
       <SiteNav />
 
       <main>
-        <div className={styles.shell}>
-          <ScamShieldHero howItWorksId="how-it-works" />
-        </div>
+        <ThreatScanner exploreId="explore" />
 
         {/* Who scammers pretend to be */}
         <div className={styles.impostorBar}>
@@ -100,7 +92,7 @@ export default function Home() {
         </div>
 
         {/* 1 — Capabilities */}
-        <section className={styles.section} aria-labelledby="capabilities-heading">
+        <section className={styles.section} id="explore" aria-labelledby="capabilities-heading">
           <div className={styles.shell}>
             <div className={`${styles.sectionHead} ${styles.reveal}`}>
               <p className={styles.sectionLabel}>THREE WAYS IN</p>

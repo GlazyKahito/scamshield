@@ -4,6 +4,7 @@
  * Fluid Particles Background — adapted from the 21st.dev community component.
  * Tailwind/cn removed for this project's CSS Modules. Particles fade their
  * trails to transparency, so the page's own background shows through.
+ * Mounted once in app/layout.tsx as the site-wide fixed background.
  */
 
 import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
@@ -90,7 +91,7 @@ export function FluidParticlesBackground({
   noiseIntensity = 0.003,
   minSize = 0.5,
   maxSize = 2,
-  color = "22, 24, 27",
+  color = "237, 235, 230",
   className,
   style,
 }: FluidParticlesBackgroundProps) {
@@ -113,22 +114,34 @@ export function FluidParticlesBackground({
       p.y = Math.random() * canvas.height;
     };
 
+    const create = (): Particle => {
+      const p: Particle = {
+        x: 0,
+        y: 0,
+        size: Math.random() * (maxSize - minSize) + minSize,
+        life: Math.random() * 100,
+        maxLife: 100 + Math.random() * 50,
+      };
+      spawn(p);
+      return p;
+    };
+
+    // Existing particles survive a resize so the field never visibly resets;
+    // only the surplus is trimmed or the shortfall topped up.
     const resize = () => {
-      canvas.width = container.clientWidth;
-      canvas.height = container.clientHeight;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      if (width === canvas.width && height === canvas.height) return;
+      canvas.width = width;
+      canvas.height = height;
       // ~1 particle per 650px², capped, so phones don't simulate 2,000 of them.
-      const count = Math.min(particleCount, Math.round((canvas.width * canvas.height) / 650));
-      particles = Array.from({ length: count }, () => {
-        const p: Particle = {
-          x: 0,
-          y: 0,
-          size: Math.random() * (maxSize - minSize) + minSize,
-          life: Math.random() * 100,
-          maxLife: 100 + Math.random() * 50,
-        };
-        spawn(p);
-        return p;
-      });
+      const count = Math.min(particleCount, Math.round((width * height) / 650));
+      for (const p of particles) {
+        p.x = Math.min(p.x, width);
+        p.y = Math.min(p.y, height);
+      }
+      if (particles.length > count) particles.length = count;
+      while (particles.length < count) particles.push(create());
     };
 
     const step = () => {

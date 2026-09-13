@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteNav } from "../../components/ui/site-nav";
 import { SiteFooter } from "../../components/ui/site-footer";
-import { FlickeringGrid } from "../../components/ui/flickering-grid";
 import styles from "../../components/ui/pages.module.css";
 
 export const metadata: Metadata = {
@@ -24,7 +23,6 @@ export default function AboutPage() {
       <SiteNav />
 
       <header className={styles.head}>
-        <FlickeringGrid className={styles.headGrid} />
         <div className={styles.shellNarrow}>
           <p className={styles.eyebrow}>ABOUT</p>
           <h1 className={styles.title}>An AI security analyst for normal people</h1>

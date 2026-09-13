@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { SiteNav } from "../../components/ui/site-nav";
 import { SiteFooter } from "../../components/ui/site-footer";
 import { Dashboard } from "../../components/dashboard/dashboard";
-import { FlickeringGrid } from "../../components/ui/flickering-grid";
 import styles from "../../components/ui/pages.module.css";
 
 export const metadata: Metadata = {
@@ -22,7 +21,6 @@ export default function DashboardPage() {
       <SiteNav />
 
       <header className={styles.head}>
-        <FlickeringGrid className={styles.headGrid} />
         <div className={styles.shell}>
           <p className={styles.eyebrow}>DASHBOARD</p>
           <h1 className={styles.title}>Your security overview</h1>

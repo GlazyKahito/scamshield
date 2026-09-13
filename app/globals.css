@@ -1,33 +1,33 @@
 /*
  * ScamShield — global design tokens and reset.
  *
- * Technical aesthetic: light paper background, ink text, one signal colour.
+ * Technical aesthetic on black: ink-light text, hairline rules, one signal colour.
  * Everything visual lives in CSS Modules; no element styling beyond the reset.
  */
 
 :root {
   /* Surfaces */
-  --bg: #F4F2EE;
-  --raised: #FBFAF7;
-  --sunken: #ECE9E3;
+  --bg: #08090A;
+  --raised: #101113;
+  --sunken: #16171A;
 
   /* Text */
-  --ink: #16181B;
-  --graphite: #51555C;
-  --muted: #6E7278;
+  --ink: #EDEBE6;
+  --graphite: #A8A6A0;
+  --muted: #85837D;
 
   /* Lines */
-  --hairline: #D9D6CF;
-  --rule: #B9B5AC;
+  --hairline: #222326;
+  --rule: #36383C;
 
   /* The one accent */
-  --signal: #C8361E;
+  --signal: #E5533A;
 
-  /* Severity scale (reports, dashboard, simulator) */
-  --sev-low: #2F7A4E;
-  --sev-moderate: #A86E12;
-  --sev-high: #C8361E;
-  --sev-critical: #8F1A10;
+  /* Severity scale (reports, dashboard, simulator, scanner) */
+  --sev-low: #4CAF7D;
+  --sev-moderate: #D9A032;
+  --sev-high: #E5533A;
+  --sev-critical: #FF3B30;
 
   /* Type — --font-dm-sans and --font-plex-mono are injected by next/font. */
   --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -44,7 +44,8 @@
 }
 
 html {
-  color-scheme: light;
+  color-scheme: dark;
+  background: var(--bg);
   -webkit-text-size-adjust: 100%;
   scroll-padding-top: calc(var(--nav-h) + 16px);
 }
@@ -68,7 +69,25 @@ svg {
 
 ::selection {
   background: var(--ink);
-  color: var(--raised);
+  color: var(--bg);
+}
+
+/*
+ * One background for the whole site. Mounted once in the root layout, fixed to
+ * the viewport, so it never scrolls with content and never remounts when the
+ * route changes. 100lvh keeps its size stable while mobile browser bars move.
+ */
+.site-background {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 100lvh;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.site-content {
+  position: relative;
+  z-index: 1;
 }
 
 .sr-only {
