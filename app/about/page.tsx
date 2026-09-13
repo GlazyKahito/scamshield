@@ -23,7 +23,7 @@ export default function AboutPage() {
       <SiteNav />
 
       <header className={styles.head}>
-        <div className={styles.shellNarrow}>
+        <div className={styles.shellNarrow} data-reveal-stagger>
           <p className={styles.eyebrow}>ABOUT</p>
           <h1 className={styles.title}>An AI security analyst for normal people</h1>
           <p className={styles.lead}>
@@ -35,7 +35,7 @@ export default function AboutPage() {
 
       <main className={styles.body}>
         <div className={styles.shellNarrow}>
-          <section className={styles.proseBlock}>
+          <section className={styles.proseBlock} data-reveal>
             <h2 className={styles.proseH}>The problem</h2>
             <p className={styles.proseP}>
               The old advice was to look for bad spelling and odd formatting. That advice is dead.
@@ -49,7 +49,7 @@ export default function AboutPage() {
             </p>
           </section>
 
-          <section className={styles.proseBlock}>
+          <section className={styles.proseBlock} data-reveal>
             <h2 className={styles.proseH}>Why rules and AI, not AI alone</h2>
             <p className={styles.proseP}>
               An AI asked &ldquo;is this a scam?&rdquo; will answer confidently either way, and you
@@ -65,7 +65,7 @@ export default function AboutPage() {
             </p>
           </section>
 
-          <section className={styles.proseBlock}>
+          <section className={styles.proseBlock} data-reveal>
             <h2 className={styles.proseH}>The architecture</h2>
             <div style={{ marginTop: 20, maxWidth: 720 }}>
               {ARCHITECTURE.map((stage, i) => (
@@ -83,7 +83,7 @@ export default function AboutPage() {
             </div>
           </section>
 
-          <section className={styles.proseBlock}>
+          <section className={styles.proseBlock} data-reveal>
             <h2 className={styles.proseH}>Privacy and safety</h2>
             <p className={styles.proseP}>
               Submitted messages are never written to application logs — errors record a reason code
@@ -97,7 +97,7 @@ export default function AboutPage() {
             </p>
           </section>
 
-          <section className={styles.proseBlock}>
+          <section className={styles.proseBlock} data-reveal>
             <h2 className={styles.proseH}>What it will not claim</h2>
             <p className={styles.proseP}>
               ScamShield reports risk, not certainty. It never states that a domain or sender is

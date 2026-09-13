@@ -14,25 +14,6 @@
 
 .shotScan { display: none; }
 
-/*
- * Scroll-driven entrance for landing sections: pure CSS, no JavaScript, and
- * simply visible in browsers without scroll timelines.
- */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .reveal {
-      animation: reveal linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 45%;
-    }
-  }
-}
-
-@keyframes reveal {
-  from { opacity: 0; transform: translateY(18px); }
-  to   { opacity: 1; transform: none; }
-}
-
 .shell {
   position: relative;
   max-width: 1180px;
@@ -285,7 +266,11 @@
     margin-top: 36px;
     border-top: 1px solid var(--hairline);
     pointer-events: none;
+    transform-origin: left;
+    transition: transform 1.4s var(--ease) 0.2s;
   }
+
+  :global(.reveal-ready) .capGrid:not(:global(.is-visible))::after { transform: scaleX(0); }
 }
 
 .capCard { min-width: 0; }
@@ -525,7 +510,19 @@
   margin: 64px 0 0;
   padding: 0 0 0 28px;
   list-style: none;
-  border-left: 1px solid var(--hairline);
+}
+
+/* The timeline rule itself; absolute so it never takes a grid cell. Draws in on reveal. */
+.steps::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 1px;
+  background: var(--hairline);
+  transform-origin: top;
+  transition: transform 1.4s var(--ease);
 }
 
 @media (min-width: 900px) {
@@ -533,10 +530,18 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
     column-gap: 48px;
     padding: 36px 0 0;
-    border-left: 0;
-    border-top: 1px solid var(--hairline);
   }
+
+  .steps::after { bottom: auto; right: 0; width: auto; height: 1px; transform-origin: left; }
 }
+
+:global(.reveal-ready) .steps:not(:global(.is-visible))::after { transform: scaleY(0); }
+
+@media (min-width: 900px) {
+  :global(.reveal-ready) .steps:not(:global(.is-visible))::after { transform: scaleX(0); }
+}
+
+.steps > .step { z-index: 1; }
 
 .step { position: relative; }
 
@@ -585,7 +590,11 @@
   left: 3px;
   width: 1px;
   background: var(--hairline);
+  transform-origin: top;
+  transition: transform 1.6s var(--ease);
 }
+
+:global(.reveal-ready) .pipeline:not(:global(.is-visible))::before { transform: scaleY(0); }
 
 .pipeStage {
   position: relative;
@@ -621,13 +630,27 @@
  * ---------------------------------------------------------------- */
 
 .detects {
+  position: relative;
   display: grid;
   gap: 48px;
   margin-top: 64px;
   padding-top: 40px;
-  border-top: 1px solid var(--hairline);
   counter-reset: detect;
 }
+
+.detects::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--hairline);
+  transform-origin: left;
+  transition: transform 1.4s var(--ease);
+}
+
+:global(.reveal-ready) .detects:not(:global(.is-visible))::before { transform: scaleX(0); }
 
 @media (min-width: 800px) {
   .detects { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 56px 88px; }

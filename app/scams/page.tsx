@@ -100,7 +100,7 @@ export default function ScamLibraryPage() {
       <SiteNav />
 
       <header className={styles.head}>
-        <div className={styles.shell}>
+        <div className={styles.shell} data-reveal-stagger>
           <p className={styles.eyebrow}>SCAM LIBRARY &middot; {SCAM_LIBRARY.length} PATTERNS</p>
           <h1 className={styles.title}>Know the shapes before they reach you.</h1>
           <p className={styles.lead}>

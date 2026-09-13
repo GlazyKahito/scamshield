@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { DM_Sans, IBM_Plex_Mono } from "next/font/google";
 import { FluidParticlesBackground } from "../components/ui/fluid-particles-background";
+import { ScrollReveal } from "../components/ui/scroll-reveal";
 import "./globals.css";
 
 const sans = DM_Sans({
@@ -38,6 +39,7 @@ export default function RootLayout({
         {/* Lives in the layout, so it persists across every route change. */}
         <FluidParticlesBackground className="site-background" />
         <div className="site-content">{children}</div>
+        <ScrollReveal />
       </body>
     </html>
   );

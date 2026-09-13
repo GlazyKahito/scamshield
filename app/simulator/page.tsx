@@ -100,7 +100,7 @@ export default function SimulatorPage() {
       <SiteNav />
 
       <header className={styles.head}>
-        <div className={styles.shell}>
+        <div className={styles.shell} data-reveal-stagger>
           <p className={styles.eyebrow}>SCAM SIMULATOR</p>
           <h1 className={styles.title}>Would you have spotted it?</h1>
           <p className={styles.lead}>

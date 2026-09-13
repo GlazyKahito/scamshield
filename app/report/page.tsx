@@ -20,7 +20,7 @@ export default function LatestReportPage() {
       <SiteNav />
 
       <header className={styles.head}>
-        <div className={styles.shellNarrow}>
+        <div className={styles.shellNarrow} data-reveal-stagger>
           <p className={styles.eyebrow}>THREAT REPORT</p>
           <h1 className={styles.title}>Your most recent analysis</h1>
         </div>

@@ -80,7 +80,7 @@ export default function Home() {
         {/* Who scammers pretend to be */}
         <div className={styles.impostorBar}>
           <div className={styles.shell}>
-            <div className={styles.impostorInner}>
+            <div className={styles.impostorInner} data-reveal>
               <span className={styles.impostorLabel}>SCAMMERS PRETEND TO BE</span>
               <ul className={styles.impostorList}>
                 {IMPOSTORS.map((name) => (
@@ -94,7 +94,7 @@ export default function Home() {
         {/* 1 — Capabilities */}
         <section className={styles.section} id="explore" aria-labelledby="capabilities-heading">
           <div className={styles.shell}>
-            <div className={`${styles.sectionHead} ${styles.reveal}`}>
+            <div className={styles.sectionHead} data-reveal>
               <p className={styles.sectionLabel}>THREE WAYS IN</p>
               <h2 id="capabilities-heading" className={styles.sectionTitle}>
                 Whatever reached you, check it.{" "}
@@ -107,8 +107,8 @@ export default function Home() {
               </p>
             </div>
 
-            <div className={styles.capGrid}>
-              <article className={`${styles.capCard} ${styles.reveal}`}>
+            <div className={styles.capGrid} data-reveal-stagger>
+              <article className={styles.capCard}>
                 <div className={styles.capCopy}>
                   <span className={styles.capIndex}>01 &middot; TEXT</span>
                   <h3 className={styles.capName}>Message analysis</h3>
@@ -130,7 +130,7 @@ export default function Home() {
                 </div>
               </article>
 
-              <article className={`${styles.capCard} ${styles.reveal}`}>
+              <article className={styles.capCard}>
                 <div className={styles.capCopy}>
                   <span className={styles.capIndex}>02 &middot; URL</span>
                   <h3 className={styles.capName}>Link analysis</h3>
@@ -163,7 +163,7 @@ export default function Home() {
                 </div>
               </article>
 
-              <article className={`${styles.capCard} ${styles.reveal}`}>
+              <article className={styles.capCard}>
                 <div className={styles.capCopy}>
                   <span className={styles.capIndex}>03 &middot; IMAGE</span>
                   <h3 className={styles.capName}>Screenshot analysis</h3>
@@ -196,7 +196,7 @@ export default function Home() {
         {/* 2 — Live demo */}
         <section className={`${styles.section} ${styles.sectionRule}`} aria-labelledby="demo-heading">
           <div className={styles.shell}>
-            <div className={`${styles.sectionHeadCenter} ${styles.reveal}`}>
+            <div className={styles.sectionHeadCenter} data-reveal>
               <p className={styles.sectionLabel}>TRY IT HERE</p>
               <h2 id="demo-heading" className={styles.sectionTitle}>Watch the engine think.</h2>
               <p className={styles.sectionLead}>
@@ -213,7 +213,7 @@ export default function Home() {
         {/* 3 — How it works */}
         <section className={`${styles.section} ${styles.sectionRule}`} id="how-it-works" aria-labelledby="how-heading">
           <div className={styles.shell}>
-            <div className={`${styles.sectionHead} ${styles.reveal}`}>
+            <div className={styles.sectionHead} data-reveal>
               <p className={styles.sectionLabel}>HOW IT WORKS</p>
               <h2 id="how-heading" className={styles.sectionTitle}>
                 Four steps. <span className={styles.sectionTitleMuted}>About ten seconds.</span>
@@ -224,7 +224,7 @@ export default function Home() {
               </p>
             </div>
 
-            <ol className={`${styles.steps} ${styles.reveal}`}>
+            <ol className={styles.steps} data-reveal-stagger>
               {STEPS.map((step) => (
                 <li key={step.num} className={styles.step}>
                   <span className={styles.stepNum}>{step.num}</span>
@@ -235,7 +235,7 @@ export default function Home() {
             </ol>
 
             <div className={styles.engine}>
-              <div className={styles.reveal}>
+              <div data-reveal>
                 <p className={styles.sectionLabel}>UNDER THE HOOD</p>
                 <h3 className={styles.engineTitle}>We don&rsquo;t just ask an AI if it&rsquo;s a scam.</h3>
                 <p className={styles.engineText}>
@@ -246,7 +246,7 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className={`${styles.pipeline} ${styles.reveal}`}>
+              <div className={styles.pipeline} data-reveal-stagger>
                 {PIPELINE.map((stage, i) => (
                   <div key={stage.index}>
                     <div className={stage.accent ? `${styles.pipeStage} ${styles.pipeStageAccent}` : styles.pipeStage}>
@@ -267,7 +267,7 @@ export default function Home() {
         {/* 4 — What it detects */}
         <section className={`${styles.section} ${styles.sectionRule}`} aria-labelledby="detects-heading">
           <div className={styles.shell}>
-            <div className={`${styles.sectionHead} ${styles.reveal}`}>
+            <div className={styles.sectionHead} data-reveal>
               <p className={styles.sectionLabel}>WHAT SCAMSHIELD DETECTS</p>
               <h2 id="detects-heading" className={styles.sectionTitle}>The mechanics behind almost every scam.</h2>
               <p className={styles.sectionLead}>
@@ -276,9 +276,9 @@ export default function Home() {
               </p>
             </div>
 
-            <div className={styles.detects}>
+            <div className={styles.detects} data-reveal-stagger>
               {DETECTS.map((detect) => (
-                <article key={detect.name} className={`${styles.detect} ${styles.reveal}`}>
+                <article key={detect.name} className={styles.detect}>
                   <h3 className={styles.detectName}>{detect.name}</h3>
                   <p className={styles.detectText}>{detect.text}</p>
                   <p className={styles.detectExample}>{detect.example}</p>
@@ -290,8 +290,8 @@ export default function Home() {
 
         {/* 5 — Final CTA */}
         <section className={styles.finale}>
-          <div className={styles.shell}>
-            <h2 className={`${styles.finaleTitle} ${styles.reveal}`}>Before you click, check.</h2>
+          <div className={styles.shell} data-reveal-stagger>
+            <h2 className={styles.finaleTitle}>Before you click, check.</h2>
             <p className={styles.finaleText}>Turn a suspicious message into a clear answer in seconds.</p>
             <div className={styles.finaleCta}>
               <Link href="/analyze" className={styles.ctaPrimary}>
