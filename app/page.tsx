@@ -3,7 +3,7 @@ import { ScamShieldHero } from "../components/ui/scamshield-hero";
 import { LandingDemo } from "../components/ui/landing-demo";
 import { SiteNav } from "../components/ui/site-nav";
 import { SiteFooter } from "../components/ui/site-footer";
-import { FlickeringGrid } from "../components/ui/flickering-grid";
+import { FluidParticlesBackground } from "../components/ui/fluid-particles-background";
 import styles from "../components/ui/scamshield.module.css";
 
 /**
@@ -76,7 +76,7 @@ const PIPELINE = [
 export default function Home() {
   return (
     <div className={styles.root}>
-      <FlickeringGrid className={styles.backdrop} />
+      <FluidParticlesBackground className={styles.backdrop} />
 
       <SiteNav />
 
