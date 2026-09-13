@@ -20,7 +20,7 @@ export default function AnalyzePage() {
       <SiteNav />
 
       <header className={styles.head}>
-        <div className={styles.shellNarrow}>
+        <div className={styles.shellNarrow} data-reveal-stagger>
           <p className={styles.eyebrow}>ANALYZER &middot; TEXT &bull; URL &bull; IMAGE</p>
           <h1 className={styles.title}>Check something suspicious.</h1>
           <p className={styles.lead}>

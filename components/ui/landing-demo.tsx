@@ -58,7 +58,7 @@ export function LandingDemo() {
   };
 
   return (
-    <div className={styles.demo}>
+    <div className={styles.demo} data-reveal-stagger>
       <div className={styles.demoPanel}>
         <div className={styles.demoBar}>
           <span>INPUT &middot; EDITABLE</span>

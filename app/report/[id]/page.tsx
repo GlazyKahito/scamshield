@@ -31,7 +31,7 @@ export default async function SavedReportPage({ params }: { params: Promise<{ id
       <SiteNav />
 
       <header className={styles.head}>
-        <div className={styles.shellNarrow}>
+        <div className={styles.shellNarrow} data-reveal-stagger>
           <p className={styles.eyebrow}>
             <Link href="/dashboard" style={{ color: "inherit", textDecoration: "none" }}>
               &larr; DASHBOARD

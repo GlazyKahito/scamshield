@@ -362,7 +362,7 @@ export function ReportView({
 
   return (
     <article className={styles.report} aria-label="Threat report">
-      <div className={styles.verdict} style={{ ["--sev" as string]: color }}>
+      <div data-reveal className={styles.verdict} style={{ ["--sev" as string]: color }}>
         <div className={styles.verdictGrid}>
           <div>
             <div className={styles.levelRow}>
@@ -473,7 +473,7 @@ export function ReportView({
         </div>
       </div>
 
-      <section className={styles.section2} aria-labelledby="signals-heading">
+      <section data-reveal className={styles.section2} aria-labelledby="signals-heading">
         <div className={styles.sectionHeadRow}>
           <div>
             <span className={styles.sectionIdx}>{idx()} &middot; EVIDENCE</span>
@@ -512,7 +512,7 @@ export function ReportView({
       </section>
 
       {report.recommendedActions.length > 0 && (
-        <section className={styles.section2} aria-labelledby="actions-heading">
+        <section data-reveal className={styles.section2} aria-labelledby="actions-heading">
           <div className={styles.sectionHeadRow}>
             <div>
               <span className={styles.sectionIdx}>{idx()} &middot; RECOMMENDED ACTION</span>
@@ -524,7 +524,7 @@ export function ReportView({
       )}
 
       {report.attackChain.length > 0 && (
-        <section className={styles.section2} aria-labelledby="chain-heading">
+        <section data-reveal className={styles.section2} aria-labelledby="chain-heading">
           <div className={styles.sectionHeadRow}>
             <div>
               <span className={styles.sectionIdx}>{idx()} &middot; ATTACK PATH</span>
@@ -540,7 +540,7 @@ export function ReportView({
       )}
 
       {report.urlAnalyses.length > 0 && (
-        <section className={styles.section2} aria-labelledby="links-heading">
+        <section data-reveal className={styles.section2} aria-labelledby="links-heading">
           <div className={styles.sectionHeadRow}>
             <div>
               <span className={styles.sectionIdx}>{idx()} &middot; LINKS</span>
@@ -556,7 +556,7 @@ export function ReportView({
       )}
 
       {report.educationalTip && (
-        <section className={styles.section2} aria-labelledby="tip-heading">
+        <section data-reveal className={styles.section2} aria-labelledby="tip-heading">
           <div className={styles.sectionHeadRow}>
             <div>
               <span className={styles.sectionIdx}>{idx()} &middot; TAKEAWAY</span>

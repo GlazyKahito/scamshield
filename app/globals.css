@@ -90,6 +90,24 @@ svg {
   z-index: 1;
 }
 
+/*
+ * Scroll reveals (components/ui/scroll-reveal.tsx). Hidden states apply only
+ * after the script adds .reveal-ready, so the page is readable without JS.
+ */
+[data-reveal],
+[data-reveal-stagger] > * {
+  transition:
+    opacity 0.9s var(--ease),
+    transform 0.9s var(--ease);
+  transition-delay: calc(var(--reveal-i, 0) * 110ms);
+}
+
+.reveal-ready [data-reveal]:not(.is-visible),
+.reveal-ready [data-reveal-stagger]:not(.is-visible) > * {
+  opacity: 0;
+  transform: translate3d(0, 28px, 0);
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

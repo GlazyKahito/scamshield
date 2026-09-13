@@ -21,7 +21,7 @@ export default function DashboardPage() {
       <SiteNav />
 
       <header className={styles.head}>
-        <div className={styles.shell}>
+        <div className={styles.shell} data-reveal-stagger>
           <p className={styles.eyebrow}>DASHBOARD</p>
           <h1 className={styles.title}>Your security overview</h1>
           <p className={styles.lead}>

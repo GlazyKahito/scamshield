@@ -583,7 +583,7 @@ export function Analyzer() {
             </div>
           )}
 
-          <div className={styles.expect}>
+          <div className={styles.expect} data-reveal-stagger>
             <div className={styles.expectItem}>
               <span className={styles.expectNum}>01 &middot; SCORE</span>
               <p className={styles.expectName}>A risk score out of 100</p>
