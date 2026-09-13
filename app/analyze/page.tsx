@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { SiteNav } from "../../components/ui/site-nav";
 import { SiteFooter } from "../../components/ui/site-footer";
 import { Analyzer } from "../../components/analyzer/analyzer";
-import { FlickeringGrid } from "../../components/ui/flickering-grid";
 import styles from "../../components/ui/pages.module.css";
 
 export const metadata: Metadata = {
@@ -21,7 +20,6 @@ export default function AnalyzePage() {
       <SiteNav />
 
       <header className={styles.head}>
-        <FlickeringGrid className={styles.headGrid} />
         <div className={styles.shellNarrow}>
           <p className={styles.eyebrow}>ANALYZER &middot; TEXT &bull; URL &bull; IMAGE</p>
           <h1 className={styles.title}>Check something suspicious.</h1>

@@ -14,7 +14,6 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: var(--bg);
   color: var(--ink);
   overflow-x: clip;
 }
@@ -26,17 +25,7 @@
   .shell, .shellNarrow { padding: 0 16px; }
 }
 
-.head { position: relative; padding: 56px 0 32px; }
-.head > :not(.headGrid) { position: relative; }
-
-/* Flickering grid behind the page title, fading toward the bottom-left. */
-.headGrid {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  mask-image: radial-gradient(ellipse 60% 100% at 85% 0%, #000 5%, transparent 75%);
-  -webkit-mask-image: radial-gradient(ellipse 60% 100% at 85% 0%, #000 5%, transparent 75%);
-}
+.head { padding: 56px 0 32px; }
 
 @media (max-width: 600px) {
   .head { padding: 36px 0 24px; }
@@ -113,7 +102,7 @@
   color: var(--raised);
 }
 
-.btnPrimary:hover:not(:disabled) { background: #000; }
+.btnPrimary:hover:not(:disabled) { background: #fff; border-color: #fff; }
 
 .btnGhost {
   border: 1px solid var(--rule);

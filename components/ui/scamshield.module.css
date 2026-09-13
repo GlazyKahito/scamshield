@@ -1,35 +1,37 @@
 /*
  * ScamShield landing, navigation and footer.
  *
- * Technical aesthetic: paper, ink, hairline rules, one signal colour.
- * Tokens come from app/globals.css. No glows, gradients, blur, tilt or scan lines.
+ * Technical aesthetic on black: ink, hairline rules, one signal colour.
+ * Tokens come from app/globals.css. The page itself is transparent so the
+ * site-wide fixed background (app/layout.tsx) shows through everywhere.
  */
 
 .root {
   position: relative;
-  background: var(--bg);
   color: var(--ink);
   overflow-x: clip;
 }
 
-/* Flickering grid behind the hero, weighted to the right and fading out. */
-.backdrop {
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 900px;
-  z-index: 0;
-  pointer-events: none;
-  mask-image: radial-gradient(ellipse 70% 75% at 72% 28%, #000 10%, transparent 70%);
-  -webkit-mask-image: radial-gradient(ellipse 70% 75% at 72% 28%, #000 10%, transparent 70%);
+.shotScan { display: none; }
+
+/*
+ * Scroll-driven entrance for landing sections: pure CSS, no JavaScript, and
+ * simply visible in browsers without scroll timelines.
+ */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 45%;
+    }
+  }
 }
 
-.root > main,
-.root > footer { position: relative; z-index: 1; }
-
-.stageGlow,
-.cardScan,
-.shotScan,
-.cardDots { display: none; }
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: none; }
+}
 
 .shell {
   position: relative;
@@ -50,7 +52,8 @@
   position: sticky;
   top: 0;
   z-index: 40;
-  background: var(--bg);
+  /* Slightly translucent so the site background reads continuously behind it. */
+  background: color-mix(in srgb, var(--bg) 84%, transparent);
   border-bottom: 1px solid var(--hairline);
 }
 
@@ -115,7 +118,7 @@
   transition: background 0.2s;
 }
 
-.navCta:hover { background: #000; }
+.navCta:hover { background: #fff; }
 
 .navToggle {
   display: inline-flex;
@@ -156,77 +159,6 @@
   .mobileMenu { display: none; }
 }
 
-/* ---------------------------------------------------------------- *
- * Hero — asymmetric: copy left, printed report right
- * ---------------------------------------------------------------- */
-
-.hero {
-  position: relative;
-  display: grid;
-  gap: 48px;
-  padding: 56px 0 72px;
-  align-items: start;
-}
-
-@media (min-width: 1020px) {
-  .hero {
-    grid-template-columns: 7fr 5fr;
-    gap: 72px;
-    padding: 96px 0 112px;
-  }
-}
-
-.capStrip {
-  display: inline-flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  color: var(--graphite);
-}
-
-.capLive {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--signal);
-}
-
-.statusDot { width: 6px; height: 6px; background: var(--signal); }
-
-.capSep { color: var(--rule); }
-.capItem { color: var(--ink); }
-
-.headline {
-  margin: 24px 0 0;
-  font-size: 64px;
-  line-height: 1.02;
-  letter-spacing: -0.035em;
-  font-weight: 600;
-  text-wrap: balance;
-}
-
-@media (max-width: 700px) {
-  .headline { font-size: 44px; }
-}
-
-.headlineProve { display: block; color: var(--signal); }
-
-.sub {
-  max-width: 48ch;
-  margin: 24px 0 0;
-  color: var(--graphite);
-  font-size: 17px;
-  line-height: 1.65;
-}
-
-.sub strong { color: var(--ink); font-weight: 500; }
-
-.ctaRow { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
-
 .ctaPrimary,
 .ctaSecondary {
   display: inline-flex;
@@ -244,7 +176,7 @@
 }
 
 .ctaPrimary { border: 1px solid var(--ink); background: var(--ink); color: var(--raised); }
-.ctaPrimary:hover { background: #000; }
+.ctaPrimary:hover { background: #fff; border-color: #fff; }
 
 .ctaSecondary { border: 1px solid var(--rule); background: transparent; color: var(--ink); }
 .ctaSecondary:hover { border-color: var(--ink); }
@@ -253,176 +185,6 @@
 .ctaPrimary:hover .ctaArrow,
 .ctaSecondary:hover .ctaArrow,
 .textLink:hover .ctaArrow { transform: translateX(3px); }
-
-.trustRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 20px;
-  margin: 28px 0 0;
-  padding: 0;
-  list-style: none;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.trustRow li { display: inline-flex; align-items: center; gap: 8px; }
-.trustRow li::before { content: ""; width: 8px; height: 1px; background: var(--rule); }
-
-/* ---------------------------------------------------------------- *
- * Hero example report — typeset like a printed sheet
- * ---------------------------------------------------------------- */
-
-.stage {
-  position: relative;
-  max-width: 520px;
-  width: 100%;
-  justify-self: start;
-}
-
-@media (min-width: 1020px) {
-  .stage { justify-self: end; margin-top: 8px; }
-}
-
-.card {
-  position: relative;
-  border: 1px solid var(--ink);
-  border-radius: 2px;
-  background: var(--raised);
-}
-
-.cardHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 18px;
-  border-bottom: 1px solid var(--ink);
-}
-
-.cardTitle { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; color: var(--ink); }
-
-.cardBadge { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; color: var(--muted); }
-
-.cardInput {
-  margin: 18px 18px 0;
-  padding: 0 0 16px;
-  border-bottom: 1px solid var(--hairline);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 1.65;
-  color: var(--graphite);
-}
-
-.cardInput mark {
-  background: transparent;
-  color: var(--signal);
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
-}
-
-.cardBody { padding: 16px 18px 20px; }
-
-.verdict {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  color: var(--signal);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.1em;
-}
-
-.verdictDot { width: 6px; height: 6px; background: var(--signal); }
-
-.scoreRow { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; margin-top: 12px; }
-
-.scoreLabel { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; color: var(--muted); }
-
-.scoreValue {
-  font-family: var(--font-mono);
-  font-size: 56px;
-  font-weight: 500;
-  letter-spacing: -0.05em;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  color: var(--ink);
-}
-
-.scoreOutOf { font-family: var(--font-mono); font-size: 15px; color: var(--muted); }
-
-.meter { margin-top: 12px; height: 3px; background: var(--hairline); overflow: hidden; }
-
-.meterFill {
-  height: 100%;
-  background: var(--signal);
-  transform-origin: left;
-  animation: fill 1.5s linear 0.2s both;
-}
-
-@keyframes fill {
-  from { transform: scaleX(0); }
-  to   { transform: scaleX(1); }
-}
-
-.signals {
-  margin-top: 16px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  border-top: 1px solid var(--hairline);
-}
-
-.signal {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--hairline);
-}
-
-.signalIcon { color: var(--signal); font-size: 10px; line-height: 1; }
-
-.signalName {
-  flex: 1;
-  min-width: 0;
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  letter-spacing: 0.04em;
-  color: var(--ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.pathHead { margin: 18px 0 10px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; color: var(--muted); }
-
-.path { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.pathStep { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink); }
-.pathNode { width: 5px; height: 5px; background: var(--graphite); flex-shrink: 0; }
-.pathNodeEnd { background: var(--signal); }
-.pathLink { color: var(--muted); font-size: 11px; }
-
-.cardFoot {
-  margin: 0;
-  padding: 10px 18px;
-  border-top: 1px solid var(--hairline);
-  color: var(--muted);
-  font-size: 12px;
-}
-
-/* Floating chips read as decoration; in this design they are dropped. */
-.chip,
-.chipTop,
-.chipBottom,
-.chipDotCyan,
-.chipDotAmber { display: none; }
-
-@media (max-width: 640px) {
-  .signals { grid-template-columns: 1fr; }
-}
 
 /* ---------------------------------------------------------------- *
  * Impostor strip

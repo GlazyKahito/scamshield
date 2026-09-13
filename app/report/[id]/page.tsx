@@ -3,7 +3,6 @@ import Link from "next/link";
 import { SiteNav } from "../../../components/ui/site-nav";
 import { SiteFooter } from "../../../components/ui/site-footer";
 import { SavedReport } from "../../../components/report/saved-report";
-import { FlickeringGrid } from "../../../components/ui/flickering-grid";
 import styles from "../../../components/ui/pages.module.css";
 
 export const metadata: Metadata = {
@@ -32,7 +31,6 @@ export default async function SavedReportPage({ params }: { params: Promise<{ id
       <SiteNav />
 
       <header className={styles.head}>
-        <FlickeringGrid className={styles.headGrid} />
         <div className={styles.shellNarrow}>
           <p className={styles.eyebrow}>
             <Link href="/dashboard" style={{ color: "inherit", textDecoration: "none" }}>
