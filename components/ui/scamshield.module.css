@@ -12,13 +12,20 @@
   overflow-x: clip;
 }
 
-/* The old ambient layers are still rendered by the markup; they stay hidden. */
-.ambient,
-.ambientGlow,
-.ambientGlowCyan,
-.ambientGlowAmber,
-.ambientGrid,
-.grain,
+/* Flickering grid behind the hero, weighted to the right and fading out. */
+.backdrop {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 900px;
+  z-index: 0;
+  pointer-events: none;
+  mask-image: radial-gradient(ellipse 70% 75% at 72% 28%, #000 10%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 75% at 72% 28%, #000 10%, transparent 70%);
+}
+
+.root > main,
+.root > footer { position: relative; z-index: 1; }
+
 .stageGlow,
 .cardScan,
 .shotScan,

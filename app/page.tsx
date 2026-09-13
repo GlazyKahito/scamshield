@@ -3,6 +3,7 @@ import { ScamShieldHero } from "../components/ui/scamshield-hero";
 import { LandingDemo } from "../components/ui/landing-demo";
 import { SiteNav } from "../components/ui/site-nav";
 import { SiteFooter } from "../components/ui/site-footer";
+import { FlickeringGrid } from "../components/ui/flickering-grid";
 import styles from "../components/ui/scamshield.module.css";
 
 /**
@@ -75,12 +76,7 @@ const PIPELINE = [
 export default function Home() {
   return (
     <div className={styles.root}>
-      <div className={styles.ambient} aria-hidden="true">
-        <div className={`${styles.ambientGlow} ${styles.ambientGlowCyan}`} />
-        <div className={`${styles.ambientGlow} ${styles.ambientGlowAmber}`} />
-        <div className={styles.ambientGrid} />
-        <div className={styles.grain} />
-      </div>
+      <FlickeringGrid className={styles.backdrop} />
 
       <SiteNav />
 

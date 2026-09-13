@@ -8,6 +8,7 @@ import { CATEGORIES, SCAM_LIBRARY, type ScamEntry } from "../../lib/content/scam
 import { setAnalyzerDraft } from "../../lib/storage/draft";
 import { SiteNav } from "../../components/ui/site-nav";
 import { SiteFooter } from "../../components/ui/site-footer";
+import { FlickeringGrid } from "../../components/ui/flickering-grid";
 import styles from "../../components/ui/pages.module.css";
 
 /**
@@ -100,6 +101,7 @@ export default function ScamLibraryPage() {
       <SiteNav />
 
       <header className={styles.head}>
+        <FlickeringGrid className={styles.headGrid} />
         <div className={styles.shell}>
           <p className={styles.eyebrow}>SCAM LIBRARY &middot; {SCAM_LIBRARY.length} PATTERNS</p>
           <h1 className={styles.title}>Know the shapes before they reach you.</h1>

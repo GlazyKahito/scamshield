@@ -6,6 +6,7 @@ import { SCENARIOS } from "../../lib/content/scenarios";
 import { saveSimulatorAnswer } from "../../lib/storage/history";
 import { SiteNav } from "../../components/ui/site-nav";
 import { SiteFooter } from "../../components/ui/site-footer";
+import { FlickeringGrid } from "../../components/ui/flickering-grid";
 import styles from "../../components/ui/pages.module.css";
 
 /**
@@ -100,6 +101,7 @@ export default function SimulatorPage() {
       <SiteNav />
 
       <header className={styles.head}>
+        <FlickeringGrid className={styles.headGrid} />
         <div className={styles.shell}>
           <p className={styles.eyebrow}>SCAM SIMULATOR</p>
           <h1 className={styles.title}>Would you have spotted it?</h1>
