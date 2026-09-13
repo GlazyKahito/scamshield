@@ -59,10 +59,11 @@ function classifyError(error: unknown): AiFailureReason {
 }
 
 function failure(reason: AiFailureReason, detail?: string): AiResult {
-  if (detail) {
-    return { ok: false, reason, message: detail };
-  }
-  return { ok: false, reason, message: AI_FAILURE_MESSAGES[reason] };
+  return {
+    ok: false,
+    reason,
+    message: detail ?? AI_FAILURE_MESSAGES[reason],
+  };
 }
 
 function extractResponseText(payload: unknown): string | undefined {
@@ -71,7 +72,6 @@ function extractResponseText(payload: unknown): string | undefined {
   const data = payload as {
     output_text?: unknown;
     output?: Array<{
-      type?: string;
       content?: Array<{
         type?: string;
         text?: string;
@@ -85,7 +85,7 @@ function extractResponseText(payload: unknown): string | undefined {
 
   const text = data.output
     ?.flatMap((item) => item.content ?? [])
-    .filter((part) => part.type === "output_text" || typeof part.text === "string")
+    .filter((part) => typeof part.text === "string")
     .map((part) => part.text ?? "")
     .join("")
     .trim();
@@ -127,19 +127,16 @@ interface TextOptions {
   hostnames?: string[];
 }
 
-type MuseInputContent =
-  | string
-  | Array<
-      | { type: "input_text"; text: string }
-      | { type: "input_image"; image_url: string }
-    >;
+type MuseContent =
+  | { type: "input_text"; text: string }
+  | { type: "input_image"; image_url: string };
 
-interface MuseInputMessage {
+interface MuseInput {
   role: "user";
-  content: MuseInputContent;
+  content: MuseContent[];
 }
 
-async function callMuse(input: MuseInputMessage[]): Promise<AiResult> {
+async function callMuse(input: MuseInput[]): Promise<AiResult> {
   const apiKey = process.env.MUSE_API_KEY?.trim();
 
   if (!apiKey) return failure("NO_API_KEY");
@@ -157,15 +154,15 @@ async function callMuse(input: MuseInputMessage[]): Promise<AiResult> {
       },
       body: JSON.stringify({
         model,
-        instructions: SYSTEM_INSTRUCTION,
+        instructions:
+          `${SYSTEM_INSTRUCTION}\n\n` +
+          "Return ONLY the final JSON object required by the ScamShield analysis schema. " +
+          "Do not wrap it in markdown fences. Do not add commentary before or after the JSON.",
         input,
-        temperature: 0.2,
-        max_output_tokens: 2048,
-        text: {
-          format: {
-            type: "json_object",
-          },
+        reasoning: {
+          effort: "minimal",
         },
+        max_output_tokens: 4096,
       }),
       signal: controller.signal,
       cache: "no-store",
@@ -196,9 +193,11 @@ async function callMuse(input: MuseInputMessage[]): Promise<AiResult> {
       }
 
       if (status === 400) {
+        const body = await response.text().catch(() => "");
+        const safeDetail = body.replace(/Bearer\s+\S+/gi, "Bearer [redacted]").slice(0, 700);
         return failure(
           "PROVIDER_ERROR",
-          "Muse API returned HTTP 400 (invalid request). ScamShield is using local security checks.",
+          `Muse API returned HTTP 400 (invalid request).${safeDetail ? ` Provider: ${safeDetail}` : ""}`,
         );
       }
 
