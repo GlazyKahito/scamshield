@@ -13,13 +13,15 @@ import "server-only";
  * path returns a typed result the caller can render honestly.
  */
 
-import { GoogleGenAI } from "@google/genai";
+import { ApiError, GoogleGenAI, type GenerateContentResponse } from "@google/genai";
 import { aiAnalysisSchema, GEMINI_RESPONSE_SCHEMA, normalizeAiAnalysis } from "./schema";
 import { buildAnalysisPrompt, buildImagePrompt, SYSTEM_INSTRUCTION } from "./prompts";
 import type { AiAnalysis } from "../../types/analysis";
 
 const DEFAULT_MODEL = "gemini-3.8-flash";
 const TIMEOUT_MS = 20_000;
+/** Room for the full schema (up to ~9k tokens of text) plus any model reasoning tokens. */
+const MAX_OUTPUT_TOKENS = 8192;
 
 export type AiFailureReason =
   | "NO_API_KEY"
@@ -74,10 +76,23 @@ function getClient(apiKey: string): GoogleGenAI {
 
 /** Map provider errors onto our reasons without surfacing provider detail. */
 function classifyError(error: unknown): AiFailureReason {
+  if (error instanceof ApiError) {
+    // Status only — the message can echo request details.
+    console.warn("[gemini] provider error status:", error.status);
+    return error.status === 429 ? "RATE_LIMITED" : "PROVIDER_ERROR";
+  }
   const text = error instanceof Error ? `${error.name} ${error.message}` : String(error);
   if (/abort|timeout|timed out/i.test(text)) return "TIMEOUT";
-  if (/429|rate|quota|exhausted/i.test(text)) return "RATE_LIMITED";
+  // Word-bounded: a bare /rate/ also matched "generateContent" in unrelated errors.
+  if (/\b429\b|quota|resource.?exhausted/i.test(text)) return "RATE_LIMITED";
+  console.warn("[gemini] provider error:", error instanceof Error ? error.name : "unknown");
   return "PROVIDER_ERROR";
+}
+
+/** Log why a response ended early; a truncated JSON body otherwise surfaces only as INVALID_JSON. */
+function logFinish(response: GenerateContentResponse): void {
+  const reason = response.candidates?.[0]?.finishReason;
+  if (reason && reason !== "STOP") console.warn("[gemini] finish reason:", reason);
 }
 
 function fail(reason: AiFailureReason): AiResult {
@@ -134,11 +149,12 @@ export async function analyzeWithGemini(content: string, options: TextOptions = 
         // Low temperature: this is an assessment, not a creative task. We want
         // the same message to score consistently across runs.
         temperature: 0.2,
-        maxOutputTokens: 2048,
+        maxOutputTokens: MAX_OUTPUT_TOKENS,
         abortSignal: controller.signal,
       },
     });
 
+    logFinish(response);
     const validated = validate(response.text);
     if ("parsed" in validated) return { ok: true, analysis: validated.parsed, model };
     return validated;
@@ -187,11 +203,12 @@ export async function analyzeImageWithGemini({ base64Data, mimeType }: ImageOpti
         responseMimeType: "application/json",
         responseSchema: GEMINI_RESPONSE_SCHEMA,
         temperature: 0.2,
-        maxOutputTokens: 2048,
+        maxOutputTokens: MAX_OUTPUT_TOKENS,
         abortSignal: controller.signal,
       },
     });
 
+    logFinish(response);
     const validated = validate(response.text);
     if ("parsed" in validated) return { ok: true, analysis: validated.parsed, model };
     return validated;

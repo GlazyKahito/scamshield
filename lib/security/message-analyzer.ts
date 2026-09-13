@@ -19,7 +19,7 @@ import type {
   SignalSeverity,
 } from "../../types/analysis";
 import { detectImpersonation } from "./brand-detector";
-import { analyzeUrl, extractUrls } from "./url-analyzer";
+import { extractUrls, parseUrl } from "./url-analyzer";
 
 interface Rule {
   name: string;
@@ -359,7 +359,7 @@ export function analyzeMessage(rawText: string): MessageAnalysis {
   const extractedUrls = extractUrls(text);
 
   const hostnames = extractedUrls
-    .map((u) => analyzeUrl(u).facts.hostname)
+    .map((u) => parseUrl(u).hostname)
     .filter(Boolean);
 
   const { signals: brandSignals, claimedBrands } = detectImpersonation(text, hostnames);

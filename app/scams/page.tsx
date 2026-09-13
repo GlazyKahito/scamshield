@@ -177,7 +177,8 @@ export default function ScamLibraryPage() {
             <div className={styles.libLayout}>
               <ul className={styles.libIndex}>
                 {entries.map((entry) => {
-                  const isSelected = selected?.id === entry.id;
+                  // openId is null only after collapsing on mobile, where nothing should look selected.
+                  const isSelected = openId !== null && selected?.id === entry.id;
                   // On mobile the entry toggles; on desktop it just selects.
                   const expanded = openId === entry.id;
                   return (

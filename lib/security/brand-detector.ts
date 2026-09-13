@@ -56,16 +56,20 @@ function escapeRe(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+/**
+ * Alias patterns compiled once at load rather than on every call — the landing
+ * demo runs this on each keystroke. Word-boundary match so "sbi" does not fire
+ * inside "sbin" or "business". No global flag, so .test() keeps no state.
+ */
+const BRAND_PATTERNS: { brand: BrandProfile; patterns: RegExp[] }[] = BRANDS.map((brand) => ({
+  brand,
+  patterns: brand.aliases.map((alias) => new RegExp(`(^|[^a-z0-9])${escapeRe(alias)}([^a-z0-9]|$)`, "i")),
+}));
+
 /** Which brands does this text claim to be from? */
 export function detectClaimedBrands(text: string): BrandProfile[] {
   const lower = text.toLowerCase();
-  return BRANDS.filter((brand) =>
-    brand.aliases.some((alias) => {
-      // Word-boundary match so "sbi" does not fire inside "sbin" or "business".
-      const re = new RegExp(`(^|[^a-z0-9])${escapeRe(alias)}([^a-z0-9]|$)`, "i");
-      return re.test(lower);
-    }),
-  );
+  return BRAND_PATTERNS.filter(({ patterns }) => patterns.some((re) => re.test(lower))).map(({ brand }) => brand);
 }
 
 /** Does `hostname` belong to (or sit under) one of the brand's real domains? */

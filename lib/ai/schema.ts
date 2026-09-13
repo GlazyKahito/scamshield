@@ -33,6 +33,7 @@ export const GEMINI_RESPONSE_SCHEMA = {
     summary: { type: Type.STRING, description: "2-3 sentences for a non-technical reader." },
     signals: {
       type: Type.ARRAY,
+      maxItems: "15",
       items: {
         type: Type.OBJECT,
         properties: {
@@ -46,6 +47,7 @@ export const GEMINI_RESPONSE_SCHEMA = {
     },
     attackChain: {
       type: Type.ARRAY,
+      maxItems: "10",
       items: {
         type: Type.OBJECT,
         properties: {
@@ -58,6 +60,7 @@ export const GEMINI_RESPONSE_SCHEMA = {
     },
     recommendedActions: {
       type: Type.ARRAY,
+      maxItems: "14",
       items: {
         type: Type.OBJECT,
         properties: {
@@ -84,7 +87,18 @@ const safeString = (max: number) =>
   z
     .string()
     .transform((s) => s.replace(/[\u0000-\u001f\u007f]/g, " ").trim())
-    .pipe(z.string().max(max));
+    // Overlong text is cut at a word boundary rather than rejected — a
+    // 1,250-character summary is still a useful summary.
+    .transform((s) => {
+      if (s.length <= max) return s;
+      const cut = s.slice(0, max - 1);
+      const lastSpace = cut.lastIndexOf(" ");
+      return `${(lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
+    });
+
+/** Keep the first `max` items instead of discarding the whole analysis for one extra. */
+const cappedArray = <T extends z.ZodTypeAny>(item: T, max: number) =>
+  z.array(item).transform((items) => items.slice(0, max));
 
 export const aiAnalysisSchema = z.object({
   riskScore: z.number().finite().min(0).max(100).transform((n) => Math.round(n)),
@@ -92,33 +106,30 @@ export const aiAnalysisSchema = z.object({
   severity: z.enum(SEVERITIES as [string, ...string[]]),
   confidence: z.number().finite().min(0).max(1),
   summary: safeString(1200),
-  signals: z
-    .array(
-      z.object({
-        name: safeString(80),
-        severity: z.enum(["LOW", "MEDIUM", "HIGH"]),
-        evidence: safeString(400),
-        explanation: safeString(1000),
-      }),
-    )
-    .max(15),
-  attackChain: z
-    .array(
-      z.object({
-        step: z.number().int().min(1).max(20),
-        title: safeString(80),
-        description: safeString(600),
-      }),
-    )
-    .max(10),
-  recommendedActions: z
-    .array(
-      z.object({
-        type: z.enum(["DO", "DONT"]),
-        text: safeString(300),
-      }),
-    )
-    .max(14),
+  signals: cappedArray(
+    z.object({
+      name: safeString(80),
+      severity: z.enum(["LOW", "MEDIUM", "HIGH"]),
+      evidence: safeString(400),
+      explanation: safeString(1000),
+    }),
+    15,
+  ),
+  attackChain: cappedArray(
+    z.object({
+      step: z.number().int().min(1).max(20),
+      title: safeString(80),
+      description: safeString(600),
+    }),
+    10,
+  ),
+  recommendedActions: cappedArray(
+    z.object({
+      type: z.enum(["DO", "DONT"]),
+      text: safeString(300),
+    }),
+    14,
+  ),
   educationalTip: safeString(600),
 });
 

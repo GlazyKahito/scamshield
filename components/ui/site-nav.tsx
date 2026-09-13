@@ -84,7 +84,7 @@ export function SiteNav() {
         </div>
 
         {open && (
-          <nav id="mobile-nav" className={styles.mobileMenu} aria-label="Main">
+          <nav id="mobile-nav" className={styles.mobileMenu} aria-label="Main (mobile)">
             {LINKS.map((link) => {
               const active = isActive(link.href);
               return (

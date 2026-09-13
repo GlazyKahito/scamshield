@@ -338,10 +338,11 @@ export function ReportView({
     if (typeof navigator.share === "function") {
       try {
         await navigator.share({ title: "ScamShield report", text });
-      } catch {
-        // User dismissed the share sheet; nothing to report.
+        return;
+      } catch (error) {
+        // Dismissing the share sheet is not a failure; anything else falls back to copying.
+        if (error instanceof DOMException && error.name === "AbortError") return;
       }
-      return;
     }
     try {
       await navigator.clipboard.writeText(text);
@@ -480,7 +481,7 @@ export function ReportView({
             <h2 id="signals-heading" className={styles.sectionH}>Why ScamShield flagged this</h2>
           </div>
           {report.signals.length > 0 && (
-            <div className={styles.legend} aria-label="Signal sources">
+            <div className={styles.legend} role="group" aria-label="Signal sources">
               <span className={styles.legendItem}>
                 <span className={`${styles.tagDot} ${styles.tagRule}`} aria-hidden="true" /> Pattern rule
               </span>

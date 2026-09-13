@@ -7,9 +7,10 @@
  */
 
 import { NextResponse } from "next/server";
-import { analyzeTextSchema } from "../../../lib/validation/schemas";
+import { analyzeTextSchema, MAX_TEXT_BODY_BYTES } from "../../../lib/validation/schemas";
 import { analyzeTextInput } from "../../../lib/security/pipeline";
 import { checkRateLimit, clientKey } from "../../../lib/utils/rate-limit";
+import { readJsonBody } from "../../../lib/utils/request";
 
 export const runtime = "nodejs";
 /** Never cache an analysis response. */
@@ -24,14 +25,15 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ success: false, error: "Invalid request body." }, { status: 400 });
+  const read = await readJsonBody(request, MAX_TEXT_BODY_BYTES);
+  if (!read.ok) {
+    return NextResponse.json(
+      { success: false, error: read.status === 413 ? "That message is too large to analyse." : "Invalid request body." },
+      { status: read.status },
+    );
   }
 
-  const parsed = analyzeTextSchema.safeParse(body);
+  const parsed = analyzeTextSchema.safeParse(read.body);
   if (!parsed.success) {
     return NextResponse.json(
       { success: false, error: parsed.error.issues[0]?.message ?? "Please paste a message or valid URL." },
