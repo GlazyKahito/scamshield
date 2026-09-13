@@ -3,6 +3,7 @@ import { ThreatScanner } from "../components/threat-scanner/threat-scanner";
 import { LandingDemo } from "../components/ui/landing-demo";
 import { SiteNav } from "../components/ui/site-nav";
 import { SiteFooter } from "../components/ui/site-footer";
+import { ACCEPTED_IMAGE_LABEL, MAX_IMAGE_LABEL } from "../lib/validation/limits";
 import styles from "../components/ui/scamshield.module.css";
 
 /**
@@ -170,6 +171,9 @@ export default function Home() {
                   <p className={styles.capText}>
                     Upload a screenshot of a chat or email. The text is read from the image, then
                     scored by the same engine as a pasted message.
+                  </p>
+                  <p className={styles.capSpec}>
+                    {ACCEPTED_IMAGE_LABEL} &middot; up to {MAX_IMAGE_LABEL}
                   </p>
                 </div>
                 <div className={styles.capVisual} aria-hidden="true">

@@ -10,6 +10,7 @@
 
 import { NextResponse } from "next/server";
 import { analyzeImageSchema, MAX_IMAGE_BODY_BYTES } from "../../../lib/validation/schemas";
+import { MAX_IMAGE_LABEL } from "../../../lib/validation/limits";
 import { analyzeImageWithGemini, isAiConfigured, supportsVision } from "../../../lib/ai/gemini";
 import { buildReport, runRuleEngineOnText } from "../../../lib/security/pipeline";
 import { checkRateLimit, clientKey } from "../../../lib/utils/rate-limit";
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
   const read = await readJsonBody(request, MAX_IMAGE_BODY_BYTES);
   if (!read.ok) {
     return NextResponse.json(
-      { success: false, error: read.status === 413 ? "Screenshots must be under 3MB." : "Invalid request body." },
+      { success: false, error: read.status === 413 ? `Screenshots must be under ${MAX_IMAGE_LABEL}.` : "Invalid request body." },
       { status: read.status },
     );
   }

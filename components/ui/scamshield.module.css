@@ -298,6 +298,8 @@
   letter-spacing: -0.025em;
 }
 
+.capSpec { margin: 12px 0 0; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--muted); }
+
 .capText { margin: 12px 0 0; max-width: 36ch; color: var(--graphite); font-size: 16px; line-height: 1.65; }
 
 .capVisual {
