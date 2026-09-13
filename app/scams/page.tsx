@@ -212,7 +212,7 @@ export default function ScamLibraryPage() {
               {selected && (
                 <div className={styles.libDetail}>
                   <article key={selected.id} className={styles.detail}>
-                    <p className={styles.entryCat} style={{ color: "var(--cyan)" }}>{selected.category}</p>
+                    <p className={styles.entryCat} style={{ color: "var(--signal)" }}>{selected.category}</p>
                     <h2 className={styles.detailTitle}>{selected.name}</h2>
                     <p className={styles.detailHook}>{selected.hook}</p>
                     <EntryDetail entry={selected} />

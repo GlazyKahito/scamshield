@@ -146,7 +146,7 @@ export function Dashboard() {
 
           <div className={styles.statCard}>
             <span className={styles.statCardLabel}>AWARENESS</span>
-            <p className={styles.statBig} style={{ color: awareness.answered > 0 ? "var(--cyan)" : undefined }}>
+            <p className={styles.statBig} style={{ color: awareness.answered > 0 ? "var(--sev-low)" : undefined }}>
               {awareness.answered > 0 ? `${awareness.score}%` : "—"}
             </p>
             <p className={styles.statCaption}>
@@ -290,7 +290,7 @@ export function Dashboard() {
                   <button
                     type="button"
                     className={styles.btnQuiet}
-                    style={{ minHeight: 0, padding: "0 4px", color: "var(--cyan-soft)" }}
+                    style={{ minHeight: 0, padding: "0 4px", color: "var(--signal)" }}
                     onClick={() => {
                       setQuery("");
                       setFilter("ALL");

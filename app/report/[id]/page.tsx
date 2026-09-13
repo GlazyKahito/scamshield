@@ -36,7 +36,7 @@ export default async function SavedReportPage({ params }: { params: Promise<{ id
             <Link href="/dashboard" style={{ color: "inherit", textDecoration: "none" }}>
               &larr; DASHBOARD
             </Link>
-            <span style={{ color: "var(--text-3)" }}> / SAVED REPORT</span>
+            <span style={{ color: "var(--muted)" }}> / SAVED REPORT</span>
           </p>
           <h1 className={styles.title}>Threat report</h1>
         </div>
