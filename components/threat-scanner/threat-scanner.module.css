@@ -15,7 +15,8 @@
   display: grid;
   gap: 48px;
   padding: 56px 0 40px;
-  align-items: center;
+  /* Top-aligned: the instrument grows when a report lands, and the copy must not move. */
+  align-items: start;
 }
 
 @media (min-width: 1020px) {
@@ -320,6 +321,18 @@
 .facts > div { padding: 12px 20px; }
 .facts > div + div { border-left: 1px solid var(--hairline); }
 .facts dd { margin: 4px 0 0; font-size: 13px; font-weight: 500; line-height: 1.35; }
+
+.note {
+  margin: 0;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--hairline);
+  border-left: 2px solid var(--sev-moderate);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--graphite);
+}
+
+@media (max-width: 480px) { .note { padding-left: 16px; padding-right: 16px; } }
 
 .summary { margin: 0; padding: 16px 20px; border-bottom: 1px solid var(--hairline); color: var(--graphite); font-size: 14px; line-height: 1.6; }
 

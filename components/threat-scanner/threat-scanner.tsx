@@ -22,6 +22,9 @@ const MAX_TEXT = 8000;
 const REQUEST_TIMEOUT_MS = 45_000;
 
 const STAGES = ["INPUT RECEIVED", "RULE ENGINE", "URL STRUCTURE", "AI ANALYSIS", "RISK ASSESSMENT"] as const;
+/** The AI call is the only slow step, so the animation waits there for the response. */
+const AI_STAGE = 3;
+const SLOW_AFTER_MS = 6000;
 
 type Phase = "idle" | "running" | "done";
 
@@ -33,8 +36,10 @@ export function ThreatScanner({ exploreId }: { exploreId: string }) {
   const [report, setReport] = useState<ThreatReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saveFailed, setSaveFailed] = useState(false);
+  const [slow, setSlow] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const slowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const reportRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -42,7 +47,10 @@ export function ThreatScanner({ exploreId }: { exploreId: string }) {
 
   const stopStages = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
+    if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
     timerRef.current = null;
+    slowTimerRef.current = null;
+    setSlow(false);
   }, []);
 
   useEffect(() => {
@@ -67,8 +75,9 @@ export function ThreatScanner({ exploreId }: { exploreId: string }) {
     setStage(0);
     stopStages();
     timerRef.current = setInterval(() => {
-      setStage((s) => Math.min(s + 1, STAGES.length - 1));
+      setStage((s) => Math.min(s + 1, AI_STAGE));
     }, 520);
+    slowTimerRef.current = setTimeout(() => setSlow(true), SLOW_AFTER_MS);
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -95,9 +104,14 @@ export function ThreatScanner({ exploreId }: { exploreId: string }) {
       setReport(data.analysis);
       setPhase("done");
       window.requestAnimationFrame(() => {
-        reportRef.current?.focus({ preventScroll: true });
-        const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        reportRef.current?.scrollIntoView({ block: "nearest", behavior: calm ? "auto" : "smooth" });
+        const el = reportRef.current;
+        if (!el) return;
+        el.focus({ preventScroll: true });
+        // Only bring the report's start into view when it landed below the fold.
+        if (el.getBoundingClientRect().top > window.innerHeight * 0.75) {
+          const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          el.scrollIntoView({ block: "start", behavior: calm ? "auto" : "smooth" });
+        }
       });
     } catch {
       if (unmountedRef.current) return;
@@ -156,8 +170,16 @@ export function ThreatScanner({ exploreId }: { exploreId: string }) {
                 type="button"
                 className={styles.primary}
                 onClick={() => {
-                  if (canSubmit) void analyze();
-                  else inputRef.current?.focus();
+                  if (canSubmit) {
+                    void analyze();
+                    return;
+                  }
+                  setError(
+                    text.length > MAX_TEXT
+                      ? `Messages are limited to ${MAX_TEXT.toLocaleString()} characters.`
+                      : "Paste a suspicious message or link first — or load the example.",
+                  );
+                  inputRef.current?.focus();
                 }}
                 disabled={busy}
               >
@@ -215,7 +237,10 @@ export function ThreatScanner({ exploreId }: { exploreId: string }) {
                 ref={inputRef}
                 className={styles.textarea}
                 value={text}
-                onChange={(e) => setText(e.target.value)}
+                onChange={(e) => {
+                  setText(e.target.value);
+                  if (error) setError(null);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                     e.preventDefault();
@@ -245,7 +270,7 @@ export function ThreatScanner({ exploreId }: { exploreId: string }) {
                   >
                     <span aria-hidden="true">{done ? "✓" : String(index + 1).padStart(2, "0")}</span>
                     <span>{label}</span>
-                    <em>{active ? "RUNNING" : done ? "COMPLETE" : "WAITING"}</em>
+                    <em>{active ? (slow ? "STILL RUNNING" : "RUNNING") : done ? "COMPLETE" : "WAITING"}</em>
                   </li>
                 );
               })}
@@ -295,6 +320,10 @@ export function ThreatScanner({ exploreId }: { exploreId: string }) {
                     <dd>{Math.round(report.confidence * 100)}%</dd>
                   </div>
                 </dl>
+
+                {report.analysisMode === "RULE_BASED_FALLBACK" && report.aiUnavailableReason && (
+                  <p className={styles.note}>{report.aiUnavailableReason}</p>
+                )}
 
                 <p className={styles.summary}>{report.summary}</p>
 
@@ -351,7 +380,13 @@ export function ThreatScanner({ exploreId }: { exploreId: string }) {
                 <span className={styles.emptyMark} aria-hidden="true">SS</span>
                 <div>
                   <b>{busy ? "ANALYSIS IN PROGRESS" : "NO THREAT REPORT YET"}</b>
-                  <span>{busy ? "Reading the message the way a scammer wrote it." : "Submit an input to begin analysis."}</span>
+                  <span>
+                    {!busy
+                      ? "Submit an input to begin analysis."
+                      : slow
+                        ? "AI analysis is taking longer than usual. Pattern checks are done — hang on a few more seconds."
+                        : "Reading the message the way a scammer wrote it."}
+                  </span>
                 </div>
               </div>
             )}
