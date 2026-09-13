@@ -513,91 +513,173 @@
 
 /* ---------------------------------------------------------------- *
  * How it works
+ *
+ * The four steps are a sequence, so they read as one timeline: a single rule
+ * with a marker per step, columns separated by space rather than dividers.
  * ---------------------------------------------------------------- */
 
 .steps {
+  position: relative;
   display: grid;
-  margin: 56px 0 0;
-  padding: 0;
+  gap: 40px;
+  margin: 64px 0 0;
+  padding: 0 0 0 28px;
   list-style: none;
-  border-top: 1px solid var(--ink);
+  border-left: 1px solid var(--hairline);
 }
 
 @media (min-width: 900px) {
-  .steps { grid-template-columns: repeat(4, 1fr); }
-  .step + .step { border-left: 1px solid var(--hairline); padding-left: 24px; }
+  .steps {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    column-gap: 48px;
+    padding: 36px 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--hairline);
+  }
 }
 
-.step { padding: 22px 24px 24px 0; border-bottom: 1px solid var(--hairline); }
+.step { position: relative; }
 
-.stepNum { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+/* Marker on the shared rule: on the left rail when stacked, on the top rule in a row. */
+.step::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: -32px;
+  width: 7px;
+  height: 7px;
+  background: var(--bg);
+  border: 1px solid var(--graphite);
+}
 
-.stepName { margin: 12px 0 0; font-size: 20px; font-weight: 600; letter-spacing: -0.015em; }
+.step:first-child::before { background: var(--signal); border-color: var(--signal); }
 
-.stepText { margin: 8px 0 0; font-size: 15px; color: var(--graphite); line-height: 1.6; }
+@media (min-width: 900px) {
+  .step::before { top: -40px; left: 0; }
+}
 
-.engine { display: grid; gap: 32px; margin-top: 80px; align-items: start; }
+.stepNum { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; color: var(--muted); }
+
+.stepName { margin: 14px 0 0; font-size: 26px; font-weight: 600; line-height: 1.15; letter-spacing: -0.025em; }
+
+.stepText { margin: 10px 0 0; max-width: 32ch; font-size: 16px; color: var(--graphite); line-height: 1.65; }
+
+.engine { display: grid; gap: 40px; margin-top: 112px; align-items: start; }
 
 @media (min-width: 960px) {
-  .engine { grid-template-columns: 0.9fr 1.1fr; gap: 72px; }
+  .engine { grid-template-columns: 0.9fr 1.1fr; gap: 88px; }
 }
 
-.engineTitle { margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+.engineTitle { margin: 0; font-size: 32px; font-weight: 600; letter-spacing: -0.025em; line-height: 1.15; }
 
-.engineText { margin: 16px 0 0; color: var(--graphite); font-size: 16px; line-height: 1.7; }
+.engineText { margin: 18px 0 0; max-width: 48ch; color: var(--graphite); font-size: 16px; line-height: 1.7; }
 
-.pipeline { display: grid; border-top: 1px solid var(--hairline); }
+/* Pipeline: one vertical rail with a node per stage; no row boxes. */
+.pipeline { position: relative; display: grid; gap: 26px; padding-top: 4px; }
+
+.pipeline::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 3px;
+  width: 1px;
+  background: var(--hairline);
+}
 
 .pipeStage {
   position: relative;
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  padding: 14px 0;
-  border-bottom: 1px solid var(--hairline);
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 0 12px;
+  padding-left: 24px;
 }
 
-.pipeStageAccent { box-shadow: inset 2px 0 0 var(--signal); padding-left: 14px; }
+.pipeStage::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  background: var(--bg);
+  border: 1px solid var(--graphite);
+}
 
-.pipeIndex { font-family: var(--font-mono); font-size: 12px; color: var(--muted); width: 22px; flex-shrink: 0; padding-top: 2px; }
+.pipeStageAccent::before { background: var(--signal); border-color: var(--signal); }
 
-.pipeName { margin: 0; font-size: 15px; font-weight: 600; }
-.pipeText { margin: 4px 0 0; font-size: 14px; color: var(--graphite); line-height: 1.55; }
+.pipeIndex { padding-top: 2px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--muted); }
+.pipeStageAccent .pipeIndex { color: var(--signal); }
+
+.pipeName { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+.pipeText { margin: 4px 0 0; max-width: 52ch; font-size: 15px; color: var(--graphite); line-height: 1.6; }
 
 .pipeArrow { display: none; }
 
 /* ---------------------------------------------------------------- *
- * Detects
+ * Detects — an editorial two-column index, not a row of tiles.
  * ---------------------------------------------------------------- */
 
 .detects {
   display: grid;
-  gap: 0 40px;
-  margin-top: 52px;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 48px;
+  margin-top: 64px;
+  padding-top: 40px;
+  border-top: 1px solid var(--hairline);
+  counter-reset: detect;
 }
 
-.detect { padding: 20px 0 24px; border-top: 1px solid var(--hairline); }
+@media (min-width: 800px) {
+  .detects { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 56px 88px; }
+}
 
-.detectName { margin: 0; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; font-weight: 500; color: var(--ink); }
+.detect { counter-increment: detect; }
 
-.detectText { margin: 10px 0 0; font-size: 15px; color: var(--graphite); line-height: 1.62; }
+.detectName {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin: 0;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+}
+
+.detectName::before {
+  content: counter(detect, decimal-leading-zero);
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  color: var(--signal);
+}
+
+.detectText { margin: 12px 0 0; max-width: 46ch; font-size: 16px; color: var(--graphite); line-height: 1.65; }
 
 .detectExample {
-  margin: 14px 0 0;
-  padding: 2px 0 2px 12px;
-  border-left: 2px solid var(--signal);
+  display: flex;
+  gap: 12px;
+  margin: 16px 0 0;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--ink);
-  line-height: 1.5;
+  line-height: 1.55;
+}
+
+.detectExample::before { content: "e.g."; flex-shrink: 0; color: var(--muted); }
+
+@media (min-width: 800px) {
+  .detectText, .detectExample { padding-left: 35px; }
 }
 
 /* ---------------------------------------------------------------- *
  * Final CTA
  * ---------------------------------------------------------------- */
 
-.finale { padding: 104px 0 112px; border-top: 1px solid var(--ink); }
+.finale { padding: 104px 0 112px; border-top: 1px solid var(--hairline); }
 
 .finaleTitle { margin: 0; font-size: 64px; font-weight: 600; letter-spacing: -0.035em; line-height: 1.02; max-width: 16ch; }
 
