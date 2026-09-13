@@ -40,22 +40,22 @@ const STEPS = [
 
 const DETECTS = [
   {
-    name: "URGENT PRESSURE",
+    name: "Urgent pressure",
     text: "Deadlines, threats and countdowns exist to stop you checking with anyone else. A real organisation will let you call them back.",
     example: "\"Your account will be blocked today\"",
   },
   {
-    name: "BRAND IMPERSONATION",
+    name: "Brand impersonation",
     text: "We compare the brand a message claims against the domain it actually links to, and flag the gap between them.",
     example: "Says SBI → links to sbi-secure-login.example",
   },
   {
-    name: "SUSPICIOUS LINKS",
+    name: "Suspicious links",
     text: "URLs are parsed as text: raw IP hosts, punycode, buried subdomains, shorteners, login-shaped paths. Never opened.",
     example: "verify.account.secure.xyz/login",
   },
   {
-    name: "CREDENTIAL THEFT",
+    name: "Credential theft",
     text: "Requests for passwords, OTPs, card details or a UPI PIN. An incoming payment never needs your PIN.",
     example: "\"Enter your UPI PIN to receive ₹5,000\"",
   },
