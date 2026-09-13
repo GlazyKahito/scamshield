@@ -91,9 +91,16 @@ export function Dashboard() {
     });
   }, [reports, query, filter]);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id: string, index: number) => {
     deleteReport(id);
     refresh();
+    // The focused button just disappeared; keep keyboard users in the list.
+    window.requestAnimationFrame(() => {
+      const buttons = document.querySelectorAll<HTMLButtonElement>("[data-delete-report]");
+      const next = buttons[Math.min(index, buttons.length - 1)];
+      if (next) next.focus();
+      else document.getElementById("history-heading")?.focus();
+    });
   };
 
   const handleClear = () => {
@@ -204,7 +211,7 @@ export function Dashboard() {
         <div className={styles.histHead}>
           <div>
             <span className={styles.sectionIdx}>HISTORY</span>
-            <h2 id="history-heading" className={styles.sectionH}>Saved reports</h2>
+            <h2 id="history-heading" className={styles.sectionH} tabIndex={-1} style={{ outline: "none" }}>Saved reports</h2>
           </div>
 
           {total > 0 &&
@@ -302,7 +309,7 @@ export function Dashboard() {
               </p>
             ) : (
               <ul className={styles.histList}>
-                {filtered.map((r) => {
+                {filtered.map((r, index) => {
                   const sev = toSeverity(r.severity);
                   const color = SEVERITY_COLOR[sev];
                   return (
@@ -325,7 +332,8 @@ export function Dashboard() {
                         <button
                           type="button"
                           className={styles.iconBtn}
-                          onClick={() => handleDelete(r.id)}
+                          onClick={() => handleDelete(r.id, index)}
+                          data-delete-report
                           aria-label={`Delete report: ${r.title || "Untitled check"}`}
                         >
                           <Trash2 size={16} aria-hidden="true" />

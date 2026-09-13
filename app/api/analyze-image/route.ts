@@ -9,10 +9,11 @@
  */
 
 import { NextResponse } from "next/server";
-import { analyzeImageSchema } from "../../../lib/validation/schemas";
+import { analyzeImageSchema, MAX_IMAGE_BODY_BYTES } from "../../../lib/validation/schemas";
 import { analyzeImageWithGemini, isAiConfigured, supportsVision } from "../../../lib/ai/gemini";
 import { buildReport, runRuleEngineOnText } from "../../../lib/security/pipeline";
 import { checkRateLimit, clientKey } from "../../../lib/utils/rate-limit";
+import { readJsonBody } from "../../../lib/utils/request";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,14 +32,15 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ success: false, error: "Invalid request body." }, { status: 400 });
+  const read = await readJsonBody(request, MAX_IMAGE_BODY_BYTES);
+  if (!read.ok) {
+    return NextResponse.json(
+      { success: false, error: read.status === 413 ? "Screenshots must be under 3MB." : "Invalid request body." },
+      { status: read.status },
+    );
   }
 
-  const parsed = analyzeImageSchema.safeParse(body);
+  const parsed = analyzeImageSchema.safeParse(read.body);
   if (!parsed.success) {
     return NextResponse.json(
       { success: false, error: parsed.error.issues[0]?.message ?? "Please upload a PNG, JPEG or WebP screenshot." },

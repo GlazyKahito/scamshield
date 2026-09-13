@@ -6,9 +6,10 @@
  */
 
 import { NextResponse } from "next/server";
-import { analyzeUrlSchema } from "../../../lib/validation/schemas";
+import { analyzeUrlSchema, MAX_TEXT_BODY_BYTES } from "../../../lib/validation/schemas";
 import { analyzeUrlInput } from "../../../lib/security/pipeline";
 import { checkRateLimit, clientKey } from "../../../lib/utils/rate-limit";
+import { readJsonBody } from "../../../lib/utils/request";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,14 +23,15 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ success: false, error: "Invalid request body." }, { status: 400 });
+  const read = await readJsonBody(request, MAX_TEXT_BODY_BYTES);
+  if (!read.ok) {
+    return NextResponse.json(
+      { success: false, error: read.status === 413 ? "That URL is too long to analyse." : "Invalid request body." },
+      { status: read.status },
+    );
   }
 
-  const parsed = analyzeUrlSchema.safeParse(body);
+  const parsed = analyzeUrlSchema.safeParse(read.body);
   if (!parsed.success) {
     return NextResponse.json(
       { success: false, error: parsed.error.issues[0]?.message ?? "Please paste a valid URL." },

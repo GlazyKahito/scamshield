@@ -21,7 +21,8 @@ import styles from "../ui/pages.module.css";
 type Mode = "MESSAGE" | "URL" | "SCREENSHOT";
 
 const MAX_TEXT = 8000;
-const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
+const REQUEST_TIMEOUT_MS = 60_000;
 const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
 const MODES: { id: Mode; label: string; Icon: typeof MessageSquareText }[] = [
@@ -104,8 +105,14 @@ export function Analyzer() {
     }
   }, []);
 
+  const abortRef = useRef<AbortController | null>(null);
+  const unmountedRef = useRef(false);
+
   useEffect(() => {
+    unmountedRef.current = false;
     return () => {
+      unmountedRef.current = true;
+      abortRef.current?.abort();
       if (stageTimer.current) clearInterval(stageTimer.current);
     };
   }, []);
@@ -147,7 +154,7 @@ export function Analyzer() {
       return;
     }
     if (file.size > MAX_IMAGE_BYTES) {
-      setError("That screenshot is over 4MB. Try cropping it to just the message.");
+      setError("That screenshot is over 3MB. Try cropping it to just the message.");
       return;
     }
 
@@ -169,6 +176,8 @@ export function Analyzer() {
   useEffect(() => {
     if (mode !== "SCREENSHOT") return;
     const onPaste = (event: ClipboardEvent) => {
+      // Swapping the image mid-analysis would show a preview that doesn't match the report.
+      if (loading) return;
       const file = Array.from(event.clipboardData?.files ?? []).find((f) => f.type.startsWith("image/"));
       if (file) {
         event.preventDefault();
@@ -177,7 +186,7 @@ export function Analyzer() {
     };
     window.addEventListener("paste", onPaste);
     return () => window.removeEventListener("paste", onPaste);
-  }, [mode, handleFile]);
+  }, [mode, handleFile, loading]);
 
   const pasteFromClipboard = useCallback(async () => {
     try {
@@ -220,16 +229,23 @@ export function Analyzer() {
           ? { url }
           : { base64Data: imageData?.base64 ?? "", mimeType: imageData?.mimeType ?? "" };
 
+    // A stalled request must not leave the console locked with no way out.
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
     try {
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
+        signal: controller.signal,
       });
 
       const data: { success?: boolean; analysis?: ThreatReport; error?: string } = await response
         .json()
         .catch(() => ({}));
+      if (unmountedRef.current) return;
 
       if (!response.ok || !data.success || !data.analysis) {
         // Prefer the server's message — it explains validation and rate limits
@@ -247,10 +263,16 @@ export function Analyzer() {
         resultRef.current?.scrollIntoView({ block: "start", behavior: calm ? "auto" : "smooth" });
       });
     } catch {
-      setError("Could not reach the analyzer. Check your connection and try again.");
+      if (unmountedRef.current) return;
+      setError(
+        controller.signal.aborted
+          ? "The analysis took too long to respond. Please try again."
+          : "Could not reach the analyzer. Check your connection and try again.",
+      );
     } finally {
-      setLoading(false);
+      clearTimeout(timeout);
       stopStages();
+      if (!unmountedRef.current) setLoading(false);
     }
   }, [canSubmit, mode, text, url, imageData, startStages, stopStages]);
 
@@ -468,7 +490,7 @@ export function Analyzer() {
                   <ImageUp size={28} className={styles.dropIcon} aria-hidden="true" />
                   <p className={styles.dropTitle}>Drop a screenshot here</p>
                   <p className={styles.dropHint}>
-                    or paste one with Ctrl+V &middot; PNG, JPEG or WebP, up to 4MB
+                    or paste one with Ctrl+V &middot; PNG, JPEG or WebP, up to 3MB
                   </p>
                   <label className={`${styles.btnGhost} ${styles.btnSm}`} htmlFor="file-input">
                     Choose a file

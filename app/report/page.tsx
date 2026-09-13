@@ -6,6 +6,9 @@ import styles from "../../components/ui/pages.module.css";
 
 export const metadata: Metadata = {
   title: "Latest report — ScamShield",
+  description: "Your most recent saved ScamShield threat report.",
+  // Report contents are private to the browser that saved them.
+  robots: { index: false, follow: false },
 };
 
 /**

@@ -64,6 +64,8 @@ export default function SimulatorPage() {
     setIndex(0);
     setAnswers([]);
     setFinished(false);
+    // The "Try again" button unmounts; move focus to the first question.
+    window.requestAnimationFrame(() => questionRef.current?.focus());
   }, []);
 
   useEffect(() => {
