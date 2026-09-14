@@ -13,7 +13,14 @@ import "server-only";
  * path returns a typed result the caller can render honestly.
  */
 
-import { ApiError, GoogleGenAI, ThinkingLevel, type GenerateContentConfig, type GenerateContentResponse } from "@google/genai";
+import {
+  ApiError,
+  GoogleGenAI,
+  ThinkingLevel,
+  type GenerateContentConfig,
+  type GenerateContentParameters,
+  type GenerateContentResponse,
+} from "@google/genai";
 import { aiAnalysisSchema, GEMINI_RESPONSE_SCHEMA, normalizeAiAnalysis } from "./schema";
 import { buildAnalysisPrompt, buildImagePrompt, SYSTEM_INSTRUCTION } from "./prompts";
 import type { AiAnalysis } from "../../types/analysis";
@@ -99,8 +106,33 @@ function classifyError(error: unknown): AiFailureReason {
   if (/abort|timeout|timed out/i.test(text)) return "TIMEOUT";
   // Word-bounded: a bare /rate/ also matched "generateContent" in unrelated errors.
   if (/\b429\b|quota|resource.?exhausted/i.test(text)) return "RATE_LIMITED";
-  console.warn("[gemini] provider error:", error instanceof Error ? error.name : "unknown");
+  // Non-API failures (network, DNS, TLS) carry no request content, and the
+  // name alone ("TypeError") is not enough to diagnose them.
+  console.warn("[gemini] provider error:", text.slice(0, 160));
   return "PROVIDER_ERROR";
+}
+
+/** Google's transient failures: overloaded or briefly unavailable. Worth one retry. */
+const RETRYABLE_STATUS = new Set([500, 502, 503, 504]);
+const RETRY_DELAY_MS = 800;
+/** Skip the retry when less than this is left of TIMEOUT_MS; it could not finish. */
+const RETRY_MIN_BUDGET_MS = 8_000;
+
+/**
+ * generateContent with a single retry on transient provider errors. The
+ * caller's abort signal still bounds the total time across both attempts.
+ */
+async function generate(apiKey: string, params: GenerateContentParameters): Promise<GenerateContentResponse> {
+  const started = Date.now();
+  try {
+    return await getClient(apiKey).models.generateContent(params);
+  } catch (error) {
+    const transient = error instanceof ApiError && RETRYABLE_STATUS.has(error.status);
+    if (!transient || TIMEOUT_MS - (Date.now() - started) < RETRY_MIN_BUDGET_MS) throw error;
+    console.warn("[gemini] transient provider error, retrying once:", error.status);
+    await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+    return getClient(apiKey).models.generateContent(params);
+  }
 }
 
 /** Log why a response ended early; a truncated JSON body otherwise surfaces only as INVALID_JSON. */
@@ -153,7 +185,7 @@ export async function analyzeWithGemini(content: string, options: TextOptions = 
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const response = await getClient(apiKey).models.generateContent({
+    const response = await generate(apiKey, {
       model,
       contents: buildAnalysisPrompt(content, options),
       config: {
@@ -199,7 +231,7 @@ export async function analyzeImageWithGemini({ base64Data, mimeType }: ImageOpti
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const response = await getClient(apiKey).models.generateContent({
+    const response = await generate(apiKey, {
       model,
       contents: [
         {
