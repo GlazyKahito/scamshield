@@ -22,7 +22,7 @@ import styles from "./threat-scanner.module.css";
  */
 
 const MAX_TEXT = 8000;
-const REQUEST_TIMEOUT_MS = 45_000;
+const REQUEST_TIMEOUT_MS = 50_000;
 
 const STAGES = ["INPUT RECEIVED", "RULE ENGINE", "URL STRUCTURE", "AI ANALYSIS", "RISK ASSESSMENT"] as const;
 /** The AI call is the only slow step, so the animation waits there for the response. */
