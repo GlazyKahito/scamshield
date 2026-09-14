@@ -26,19 +26,25 @@ import { buildAnalysisPrompt, buildImagePrompt, SYSTEM_INSTRUCTION } from "./pro
 import type { AiAnalysis } from "../../types/analysis";
 
 const DEFAULT_MODEL = "gemini-3.8-flash";
-const TIMEOUT_MS = 20_000;
+/**
+ * Gemini 3.8 Flash can take 20s+ to fill the full schema. Kept below the
+ * browser-side request timeouts (threat scanner 50s, analyzer 60s) so the
+ * server always answers first, with the rule-based report if AI ran out.
+ */
+const TIMEOUT_MS = 38_000;
 /** Room for the full schema (up to ~9k tokens of text) plus any model reasoning tokens. */
 const MAX_OUTPUT_TOKENS = 8192;
 
 /**
  * Gemini 3 tuning. Temperature stays at the model default (1.0): Google warns
  * that lowering it on Gemini 3 can cause looping, which here surfaces as a
- * truncated JSON body. Thinking is capped at LOW so the reply fits TIMEOUT_MS.
- * Older models reject thinkingLevel, so they keep the low temperature instead.
+ * truncated JSON body. Thinking is MINIMAL, the Flash default: LOW pushed
+ * responses past 20s in production. Older models reject thinkingLevel, so
+ * they keep the low temperature instead.
  */
 function generationTuning(model: string): Pick<GenerateContentConfig, "temperature" | "thinkingConfig"> {
   return /gemini-[3-9]/i.test(model)
-    ? { thinkingConfig: { thinkingLevel: ThinkingLevel.LOW } }
+    ? { thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL } }
     : { temperature: 0.2 };
 }
 
@@ -203,6 +209,8 @@ export async function analyzeWithGemini(content: string, options: TextOptions = 
     if ("parsed" in validated) return { ok: true, analysis: validated.parsed, model };
     return validated;
   } catch (error) {
+    // Our own timer fired: that is a timeout however the runtime words the abort.
+    if (controller.signal.aborted) return fail("TIMEOUT");
     return fail(classifyError(error));
   } finally {
     clearTimeout(timer);
@@ -257,6 +265,8 @@ export async function analyzeImageWithGemini({ base64Data, mimeType }: ImageOpti
     if ("parsed" in validated) return { ok: true, analysis: validated.parsed, model };
     return validated;
   } catch (error) {
+    // Our own timer fired: that is a timeout however the runtime words the abort.
+    if (controller.signal.aborted) return fail("TIMEOUT");
     return fail(classifyError(error));
   } finally {
     clearTimeout(timer);
