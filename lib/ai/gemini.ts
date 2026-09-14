@@ -118,26 +118,53 @@ function classifyError(error: unknown): AiFailureReason {
   return "PROVIDER_ERROR";
 }
 
-/** Google's transient failures: overloaded or briefly unavailable. Worth one retry. */
-const RETRYABLE_STATUS = new Set([500, 502, 503, 504]);
-const RETRY_DELAY_MS = 800;
-/** Skip the retry when less than this is left of TIMEOUT_MS; it could not finish. */
-const RETRY_MIN_BUDGET_MS = 8_000;
+/**
+ * Models tried, in order, when the primary cannot serve the request. Google
+ * returns 503 UNAVAILABLE when a model is overloaded, which in production
+ * lasted long enough that retrying gemini-3.8-flash alone did not help.
+ * Override with GEMINI_FALLBACK_MODELS (comma-separated; empty disables).
+ */
+const DEFAULT_FALLBACK_MODELS = "gemini-3.7-flash,gemini-2.5-flash";
+
+export function getModelChain(): string[] {
+  const fallbacks = (process.env.GEMINI_FALLBACK_MODELS ?? DEFAULT_FALLBACK_MODELS)
+    .split(",")
+    .map((m) => m.trim())
+    .filter(Boolean);
+  return [...new Set([getModelName(), ...fallbacks])];
+}
 
 /**
- * generateContent with a single retry on transient provider errors. The
- * caller's abort signal still bounds the total time across both attempts.
+ * Statuses where another model can still answer: overloaded or unavailable
+ * (5xx), per-model quota exhausted (429), or model not available (404).
+ * Anything else — a bad key, a rejected request — would fail on every model.
  */
-async function generate(apiKey: string, params: GenerateContentParameters): Promise<GenerateContentResponse> {
+const FAILOVER_STATUS = new Set([404, 429, 500, 502, 503, 504]);
+const FAILOVER_DELAY_MS = 400;
+/** Stop failing over when less than this is left of TIMEOUT_MS; a new model could not finish. */
+const FAILOVER_MIN_BUDGET_MS = 8_000;
+
+/**
+ * generateContent across the model chain. `build` makes the request for a
+ * given model; the caller's abort signal bounds the total time for all tries.
+ */
+async function generate(
+  apiKey: string,
+  models: string[],
+  build: (model: string) => GenerateContentParameters,
+): Promise<{ response: GenerateContentResponse; model: string }> {
   const started = Date.now();
-  try {
-    return await getClient(apiKey).models.generateContent(params);
-  } catch (error) {
-    const transient = error instanceof ApiError && RETRYABLE_STATUS.has(error.status);
-    if (!transient || TIMEOUT_MS - (Date.now() - started) < RETRY_MIN_BUDGET_MS) throw error;
-    console.warn("[gemini] transient provider error, retrying once:", error.status);
-    await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
-    return getClient(apiKey).models.generateContent(params);
+  for (let i = 0; ; i++) {
+    const model = models[i];
+    try {
+      return { response: await getClient(apiKey).models.generateContent(build(model)), model };
+    } catch (error) {
+      const next = models[i + 1];
+      const canFailover = error instanceof ApiError && FAILOVER_STATUS.has(error.status);
+      if (!next || !canFailover || TIMEOUT_MS - (Date.now() - started) < FAILOVER_MIN_BUDGET_MS) throw error;
+      console.warn(`[gemini] ${model} returned ${error.status}, falling back to ${next}`);
+      await new Promise((resolve) => setTimeout(resolve, FAILOVER_DELAY_MS));
+    }
   }
 }
 
@@ -186,14 +213,14 @@ export async function analyzeWithGemini(content: string, options: TextOptions = 
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) return fail("NO_API_KEY");
 
-  const model = getModelName();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const contents = buildAnalysisPrompt(content, options);
 
   try {
-    const response = await generate(apiKey, {
+    const { response, model } = await generate(apiKey, getModelChain(), (model) => ({
       model,
-      contents: buildAnalysisPrompt(content, options),
+      contents,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
         responseMimeType: "application/json",
@@ -202,7 +229,7 @@ export async function analyzeWithGemini(content: string, options: TextOptions = 
         maxOutputTokens: MAX_OUTPUT_TOKENS,
         abortSignal: controller.signal,
       },
-    });
+    }));
 
     logFinish(response);
     const validated = validate(response.text);
@@ -232,14 +259,14 @@ export async function analyzeImageWithGemini({ base64Data, mimeType }: ImageOpti
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) return fail("NO_API_KEY");
 
-  const model = getModelName();
-  if (!supportsVision(model)) return fail("VISION_UNSUPPORTED");
+  const models = getModelChain().filter((m) => supportsVision(m));
+  if (models.length === 0 || !supportsVision(getModelName())) return fail("VISION_UNSUPPORTED");
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const response = await generate(apiKey, {
+    const { response, model } = await generate(apiKey, models, (model) => ({
       model,
       contents: [
         {
@@ -258,7 +285,7 @@ export async function analyzeImageWithGemini({ base64Data, mimeType }: ImageOpti
         maxOutputTokens: MAX_OUTPUT_TOKENS,
         abortSignal: controller.signal,
       },
-    });
+    }));
 
     logFinish(response);
     const validated = validate(response.text);
