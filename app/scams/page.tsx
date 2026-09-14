@@ -8,6 +8,7 @@ import { CATEGORIES, SCAM_LIBRARY, type ScamEntry } from "../../lib/content/scam
 import { setAnalyzerDraft } from "../../lib/storage/draft";
 import { SiteNav } from "../../components/ui/site-nav";
 import { SiteFooter } from "../../components/ui/site-footer";
+import { CutReveal } from "../../components/ui/motion/cut-reveal";
 import styles from "../../components/ui/pages.module.css";
 
 /**
@@ -102,7 +103,9 @@ export default function ScamLibraryPage() {
       <header className={styles.head}>
         <div className={styles.shell} data-reveal-stagger>
           <p className={styles.eyebrow}>SCAM LIBRARY &middot; {SCAM_LIBRARY.length} PATTERNS</p>
-          <h1 className={styles.title}>Know the shapes before they reach you.</h1>
+          <h1 className={styles.title}>
+            <CutReveal>Know the shapes before they reach you.</CutReveal>
+          </h1>
           <p className={styles.lead}>
             Scams vary enormously in story and almost not at all in structure. Learn the structure
             once and the story stops mattering.

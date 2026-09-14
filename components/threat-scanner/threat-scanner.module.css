@@ -35,6 +35,8 @@
 .hero > div:first-child > :nth-child(4) { animation-delay: 0.36s; }
 .hero > div:first-child > :nth-child(5) { animation-delay: 0.46s; }
 .hero > div:first-child > :nth-child(6) { animation-delay: 0.54s; }
+/* The headline animates word by word instead (components/ui/motion/cut-reveal.tsx). */
+.hero > div:first-child > .headline { animation: none; }
 
 .instrument { animation: enter 1.1s var(--ease) 0.3s both; }
 .explore { animation: enter 0.9s var(--ease) 0.7s both; }
@@ -65,16 +67,17 @@
 .eyebrowDot { width: 6px; height: 6px; border-radius: 50%; background: var(--signal); }
 
 .headline {
+  font-family: var(--font-display);
   margin: 0;
   max-width: 17ch;
   font-size: 64px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.012em;
   text-wrap: balance;
 }
 
-.headlineMuted { display: block; color: var(--muted); }
+.headlineMuted { display: block; color: var(--muted); font-style: italic; }
 
 @media (max-width: 1100px) { .headline { font-size: 56px; } }
 @media (max-width: 700px) { .headline { font-size: 44px; } }

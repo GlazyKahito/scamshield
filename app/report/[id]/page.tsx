@@ -3,6 +3,7 @@ import Link from "next/link";
 import { SiteNav } from "../../../components/ui/site-nav";
 import { SiteFooter } from "../../../components/ui/site-footer";
 import { SavedReport } from "../../../components/report/saved-report";
+import { CutReveal } from "../../../components/ui/motion/cut-reveal";
 import styles from "../../../components/ui/pages.module.css";
 
 export const metadata: Metadata = {
@@ -38,7 +39,9 @@ export default async function SavedReportPage({ params }: { params: Promise<{ id
             </Link>
             <span style={{ color: "var(--muted)" }}> / SAVED REPORT</span>
           </p>
-          <h1 className={styles.title}>Threat report</h1>
+          <h1 className={styles.title}>
+            <CutReveal>Threat report</CutReveal>
+          </h1>
         </div>
       </header>
 

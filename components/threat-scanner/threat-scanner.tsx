@@ -8,6 +8,8 @@ import { MESSAGE_EXAMPLES } from "../../lib/content/examples";
 import { saveReport } from "../../lib/storage/history";
 import { CLASSIFICATION_LABEL, SEVERITY_COLOR } from "../report/severity";
 import { ACCEPTED_IMAGE_LABEL, MAX_IMAGE_LABEL } from "../../lib/validation/limits";
+import { CutReveal } from "../ui/motion/cut-reveal";
+import { NumberTicker } from "../ui/motion/number-ticker";
 import styles from "./threat-scanner.module.css";
 
 /**
@@ -158,8 +160,10 @@ export function ThreatScanner({ exploreId }: { exploreId: string }) {
               SCAMSHIELD / THREAT ANALYSIS
             </p>
             <h1 id="scanner-heading" className={styles.headline}>
-              Don&rsquo;t get scammed.
-              <span className={styles.headlineMuted}>Know what you&rsquo;re looking at.</span>
+              <CutReveal delay={0.1}>Don’t get scammed.</CutReveal>
+              <span className={styles.headlineMuted}>
+                <CutReveal delay={0.32}>Know what you’re looking at.</CutReveal>
+              </span>
             </h1>
             <p className={styles.lead}>
               Paste a suspicious message or link. ScamShield breaks down the threat before you act
@@ -323,7 +327,9 @@ export function ThreatScanner({ exploreId }: { exploreId: string }) {
                     </strong>
                   </div>
                   <div className={styles.scoreWrap}>
-                    <strong className={styles.score}>{report.riskScore}</strong>
+                    <strong className={styles.score}>
+                      <NumberTicker value={report.riskScore} />
+                    </strong>
                     <span>/ 100</span>
                   </div>
                 </div>

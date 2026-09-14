@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { SiteNav } from "../../components/ui/site-nav";
 import { SiteFooter } from "../../components/ui/site-footer";
 import { SavedReport } from "../../components/report/saved-report";
+import { CutReveal } from "../../components/ui/motion/cut-reveal";
 import styles from "../../components/ui/pages.module.css";
 
 export const metadata: Metadata = {
@@ -25,7 +26,9 @@ export default function LatestReportPage() {
       <header className={styles.head}>
         <div className={styles.shellNarrow} data-reveal-stagger>
           <p className={styles.eyebrow}>THREAT REPORT</p>
-          <h1 className={styles.title}>Your most recent analysis</h1>
+          <h1 className={styles.title}>
+            <CutReveal>Your most recent analysis</CutReveal>
+          </h1>
         </div>
       </header>
 
