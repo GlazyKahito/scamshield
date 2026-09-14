@@ -41,10 +41,11 @@
 }
 
 .title {
+  font-family: var(--font-display);
   margin: 0;
   font-size: 44px;
-  font-weight: 600;
-  letter-spacing: -0.03em;
+  font-weight: 500;
+  letter-spacing: -0.012em;
   line-height: 1.05;
   text-wrap: balance;
 }
@@ -559,10 +560,11 @@
 }
 
 .verdictTitle {
+  font-family: var(--font-display);
   margin: 16px 0 0;
   font-size: 40px;
-  font-weight: 600;
-  letter-spacing: -0.03em;
+  font-weight: 500;
+  letter-spacing: -0.012em;
   line-height: 1.05;
   text-wrap: balance;
 }
@@ -660,7 +662,7 @@
 .section2 { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--hairline); }
 .sectionHeadRow { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 10px 20px; margin-bottom: 20px; }
 .sectionIdx { display: block; margin-bottom: 10px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; color: var(--signal); }
-.sectionH { margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; }
+.sectionH { font-family: var(--font-display); margin: 0; font-size: 28px; font-weight: 500; letter-spacing: -0.012em; line-height: 1.15; }
 .sectionSub { margin: 8px 0 0; max-width: 62ch; font-size: 15px; color: var(--graphite); line-height: 1.6; }
 
 .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); }
@@ -908,7 +910,7 @@
 }
 
 .emptyIcon { display: inline-flex; margin-bottom: 16px; color: var(--graphite); }
-.emptyTitle { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+.emptyTitle { font-family: var(--font-display); margin: 0; font-size: 22px; font-weight: 500; letter-spacing: -0.012em; }
 .emptyText { margin: 10px 0 22px; max-width: 52ch; color: var(--graphite); font-size: 15px; line-height: 1.65; }
 .emptyActions { display: flex; flex-wrap: wrap; gap: 10px; }
 
@@ -963,7 +965,7 @@
 }
 .bubbleTime { display: block; margin: 10px 0 0 16px; font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
 
-.question { margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+.question { font-family: var(--font-display); margin: 0; font-size: 28px; font-weight: 500; letter-spacing: -0.012em; line-height: 1.2; }
 
 .optionList { display: grid; margin-top: 20px; border-top: 1px solid var(--hairline); }
 
@@ -1009,7 +1011,7 @@
 .result { padding: 32px 28px; border: 1px solid var(--rule); border-top: 3px solid var(--ink); border-radius: 2px; background: var(--raised); }
 .resultScore { margin: 12px 0 0; font-family: var(--font-mono); font-size: 96px; font-weight: 500; letter-spacing: -0.06em; line-height: 1; }
 @media (max-width: 560px) { .resultScore { font-size: 64px; } .result { padding: 24px 18px; } }
-.resultTitle { margin: 12px 0 0; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+.resultTitle { font-family: var(--font-display); margin: 12px 0 0; font-size: 24px; font-weight: 500; letter-spacing: -0.012em; }
 .resultText { margin: 10px 0 0; max-width: 58ch; font-size: 15px; color: var(--graphite); line-height: 1.65; }
 .review { margin: 28px 0 0; padding: 0; list-style: none; display: grid; border-top: 1px solid var(--hairline); }
 .reviewItem { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--hairline); font-size: 14px; }
@@ -1052,7 +1054,7 @@
 }
 
 .detail { padding: 4px 0 0; border-top: 1px solid var(--ink); }
-.detailTitle { margin: 12px 0 0; font-size: 34px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.1; }
+.detailTitle { font-family: var(--font-display); margin: 12px 0 0; font-size: 34px; font-weight: 500; letter-spacing: -0.012em; line-height: 1.1; }
 @media (max-width: 700px) { .detailTitle { font-size: 26px; } }
 .detailHook { margin: 10px 0 0; font-size: 17px; color: var(--graphite); line-height: 1.6; }
 
@@ -1070,7 +1072,7 @@
  * ---------------------------------------------------------------- */
 
 .proseBlock { margin-top: 56px; }
-.proseH { margin: 0 0 14px; font-size: 28px; font-weight: 600; letter-spacing: -0.02em; }
+.proseH { font-family: var(--font-display); margin: 0 0 14px; font-size: 28px; font-weight: 500; letter-spacing: -0.012em; }
 .proseP { margin: 0 0 16px; font-size: 16px; line-height: 1.75; color: var(--graphite); max-width: 68ch; }
 
 .archStep { display: flex; align-items: flex-start; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--hairline); }

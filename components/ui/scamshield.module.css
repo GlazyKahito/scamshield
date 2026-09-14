@@ -73,8 +73,7 @@
 .navLink:hover { color: var(--ink); }
 .navLinkActive { color: var(--ink); }
 
-.navLinkActive::after {
-  content: "";
+.navUnderline {
   position: absolute;
   left: 12px;
   right: 12px;
@@ -205,11 +204,12 @@
 }
 
 .sectionTitle {
+  font-family: var(--font-display);
   margin: 0;
   font-size: 44px;
   line-height: 1.06;
-  letter-spacing: -0.03em;
-  font-weight: 600;
+  letter-spacing: -0.012em;
+  font-weight: 500;
   text-wrap: balance;
 }
 
@@ -217,7 +217,7 @@
   .sectionTitle { font-size: 32px; }
 }
 
-.sectionTitleMuted { color: var(--muted); }
+.sectionTitleMuted { color: var(--muted); font-style: italic; }
 
 .sectionLead { margin: 18px 0 0; max-width: 58ch; color: var(--graphite); font-size: 17px; line-height: 1.65; }
 
@@ -291,11 +291,12 @@
 .capIndex::after { content: ""; width: 24px; height: 1px; background: var(--signal); }
 
 .capName {
+  font-family: var(--font-display);
   margin: 20px 0 0;
   font-size: 28px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.15;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.012em;
 }
 
 .capSpec { margin: 12px 0 0; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--muted); }
@@ -567,7 +568,7 @@
 
 .stepNum { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; color: var(--muted); }
 
-.stepName { margin: 14px 0 0; font-size: 26px; font-weight: 600; line-height: 1.15; letter-spacing: -0.025em; }
+.stepName { font-family: var(--font-display); margin: 14px 0 0; font-size: 26px; font-weight: 500; line-height: 1.15; letter-spacing: -0.012em; }
 
 .stepText { margin: 10px 0 0; max-width: 32ch; font-size: 16px; color: var(--graphite); line-height: 1.65; }
 
@@ -577,7 +578,7 @@
   .engine { grid-template-columns: 0.9fr 1.1fr; gap: 88px; }
 }
 
-.engineTitle { margin: 0; font-size: 32px; font-weight: 600; letter-spacing: -0.025em; line-height: 1.15; }
+.engineTitle { font-family: var(--font-display); margin: 0; font-size: 32px; font-weight: 500; letter-spacing: -0.012em; line-height: 1.15; }
 
 .engineText { margin: 18px 0 0; max-width: 48ch; color: var(--graphite); font-size: 16px; line-height: 1.7; }
 
@@ -661,14 +662,15 @@
 .detect { counter-increment: detect; }
 
 .detectName {
+  font-family: var(--font-display);
   display: flex;
   align-items: baseline;
   gap: 16px;
   margin: 0;
   font-size: 26px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.2;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.012em;
   color: var(--ink);
 }
 
@@ -706,7 +708,7 @@
 
 .finale { padding: 104px 0 112px; border-top: 1px solid var(--hairline); }
 
-.finaleTitle { margin: 0; font-size: 64px; font-weight: 600; letter-spacing: -0.035em; line-height: 1.02; max-width: 16ch; }
+.finaleTitle { font-family: var(--font-display); margin: 0; font-size: 64px; font-weight: 500; letter-spacing: -0.012em; line-height: 1.02; max-width: 16ch; }
 
 @media (max-width: 700px) {
   .finaleTitle { font-size: 40px; }

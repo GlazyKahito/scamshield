@@ -1,0 +1,48 @@
+/*
+ * Motion primitives: heading cut reveal and hover letter roll.
+ * All motion is disabled under prefers-reduced-motion (see app/globals.css).
+ */
+
+/* ---- Cut reveal ------------------------------------------------- */
+
+.cut { display: inline; }
+
+/*
+ * Each word clips its own line. The padding/negative-margin pairs give serif
+ * ascenders, descenders and italic overhangs room without shifting layout.
+ */
+.cutWord {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding: 0.1em 0.06em 0.14em;
+  margin: -0.1em -0.06em -0.14em;
+}
+
+.cutInner { display: inline-block; will-change: transform; }
+
+/* ---- Letter roll ------------------------------------------------ */
+
+.roll { display: inline-block; }
+
+.rollLine {
+  display: inline-flex;
+  overflow: hidden;
+  height: 1.25em;
+  line-height: 1.25em;
+  vertical-align: middle;
+}
+
+.rollChar {
+  display: inline-block;
+  /* The copy that rolls into view sits exactly one line below. */
+  text-shadow: 0 1.25em currentColor;
+  transition: transform 0.5s cubic-bezier(0.76, 0, 0.24, 1);
+  transition-delay: calc(var(--i, 0) * 16ms);
+}
+
+@media (hover: hover) {
+  :is(a, button):hover > .roll .rollChar { transform: translate3d(0, -1.25em, 0); }
+}
+
+:is(a, button):focus-visible > .roll .rollChar { transform: translate3d(0, -1.25em, 0); }

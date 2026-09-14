@@ -6,6 +6,7 @@ import { SCENARIOS } from "../../lib/content/scenarios";
 import { saveSimulatorAnswer } from "../../lib/storage/history";
 import { SiteNav } from "../../components/ui/site-nav";
 import { SiteFooter } from "../../components/ui/site-footer";
+import { CutReveal } from "../../components/ui/motion/cut-reveal";
 import styles from "../../components/ui/pages.module.css";
 
 /**
@@ -104,7 +105,9 @@ export default function SimulatorPage() {
       <header className={styles.head}>
         <div className={styles.shell} data-reveal-stagger>
           <p className={styles.eyebrow}>SCAM SIMULATOR</p>
-          <h1 className={styles.title}>Would you have spotted it?</h1>
+          <h1 className={styles.title}>
+            <CutReveal>Would you have spotted it?</CutReveal>
+          </h1>
           <p className={styles.lead}>
             {SCENARIOS.length} realistic scenarios. Every message here is invented for training
             &mdash; no real links, numbers or accounts appear anywhere in this simulator.

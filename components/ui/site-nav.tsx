@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { RollText } from "./motion/roll-text";
 import styles from "./scamshield.module.css";
 
 /**
@@ -58,7 +60,15 @@ export function SiteNav() {
                   aria-current={active ? "page" : undefined}
                   className={active ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink}
                 >
-                  {link.label}
+                  <RollText>{link.label}</RollText>
+                  {active && (
+                    // Shared layoutId: the underline glides from the old tab to the new one.
+                    <motion.span
+                      layoutId="nav-underline"
+                      className={styles.navUnderline}
+                      transition={{ type: "spring", stiffness: 380, damping: 34 }}
+                    />
+                  )}
                 </Link>
               );
             })}
@@ -67,7 +77,7 @@ export function SiteNav() {
           <div className={styles.navRight}>
             {pathname !== "/analyze" && (
               <Link href="/analyze" className={styles.navCta}>
-                Check a message
+                <RollText>Check a message</RollText>
               </Link>
             )}
             <button

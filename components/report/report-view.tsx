@@ -20,6 +20,7 @@ import {
   tint,
   toSeverity,
 } from "./severity";
+import { CutReveal } from "../ui/motion/cut-reveal";
 import styles from "../ui/pages.module.css";
 
 /**
@@ -379,7 +380,9 @@ export function ReportView({
               </p>
             </div>
 
-            <h2 className={styles.verdictTitle}>{SEVERITY_HEADLINE[severity]}</h2>
+            <h2 className={styles.verdictTitle}>
+              <CutReveal key={severity} delay={0.15}>{SEVERITY_HEADLINE[severity]}</CutReveal>
+            </h2>
 
             <p className={styles.subLabel}>EXPLANATION</p>
             <p className={styles.summary}>{report.summary}</p>

@@ -29,8 +29,9 @@
   --sev-high: #E5533A;
   --sev-critical: #FF3B30;
 
-  /* Type — --font-dm-sans and --font-plex-mono are injected by next/font. */
-  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Type — --font-newsreader, --font-schibsted and --font-plex-mono are injected by next/font. */
+  --font-display: var(--font-newsreader), "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-schibsted), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   --ease: cubic-bezier(0.22, 1, 0.36, 1);

@@ -18,6 +18,7 @@ import {
   SEVERITY_LABEL,
   toSeverity,
 } from "../report/severity";
+import { NumberTicker } from "../ui/motion/number-ticker";
 import styles from "../ui/pages.module.css";
 
 /**
@@ -135,7 +136,7 @@ export function Dashboard() {
         <div className={styles.statCards}>
           <div className={styles.statCard}>
             <span className={styles.statCardLabel}>TOTAL CHECKS</span>
-            <p className={styles.statBig}>{total}</p>
+            <p className={styles.statBig}><NumberTicker value={total} /></p>
             <p className={styles.statCaption}>
               {latest ? `Last saved ${relativeTime(latest.createdAt)}` : "Saved reports appear here"}
             </p>
@@ -144,7 +145,7 @@ export function Dashboard() {
           <div className={styles.statCard}>
             <span className={styles.statCardLabel}>HIGH-RISK</span>
             <p className={styles.statBig} style={{ color: highRisk > 0 ? SEVERITY_COLOR.CRITICAL : undefined }}>
-              {highRisk}
+              <NumberTicker value={highRisk} delay={0.08} />
             </p>
             <p className={styles.statCaption}>
               {total > 0 ? `${Math.round((highRisk / total) * 100)}% of saved checks` : "High and critical findings"}
@@ -154,7 +155,7 @@ export function Dashboard() {
           <div className={styles.statCard}>
             <span className={styles.statCardLabel}>AWARENESS</span>
             <p className={styles.statBig} style={{ color: awareness.answered > 0 ? "var(--sev-low)" : undefined }}>
-              {awareness.answered > 0 ? `${awareness.score}%` : "—"}
+              {awareness.answered > 0 ? <NumberTicker value={awareness.score} suffix="%" delay={0.16} /> : "—"}
             </p>
             <p className={styles.statCaption}>
               {awareness.answered > 0 ? (
@@ -168,7 +169,7 @@ export function Dashboard() {
           <div className={styles.statCard}>
             <span className={styles.statCardLabel}>SAFE</span>
             <p className={styles.statBig} style={{ color: counts.LOW > 0 ? SEVERITY_COLOR.LOW : undefined }}>
-              {counts.LOW}
+              <NumberTicker value={counts.LOW} delay={0.24} />
             </p>
             <p className={styles.statCaption}>No known patterns matched</p>
           </div>

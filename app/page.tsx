@@ -4,6 +4,8 @@ import { LandingDemo } from "../components/ui/landing-demo";
 import { SiteNav } from "../components/ui/site-nav";
 import { SiteFooter } from "../components/ui/site-footer";
 import { ACCEPTED_IMAGE_LABEL, MAX_IMAGE_LABEL } from "../lib/validation/limits";
+import { CutReveal } from "../components/ui/motion/cut-reveal";
+import { RollText } from "../components/ui/motion/roll-text";
 import styles from "../components/ui/scamshield.module.css";
 
 /**
@@ -98,8 +100,10 @@ export default function Home() {
             <div className={styles.sectionHead} data-reveal>
               <p className={styles.sectionLabel}>THREE WAYS IN</p>
               <h2 id="capabilities-heading" className={styles.sectionTitle}>
-                Whatever reached you, check it.{" "}
-                <span className={styles.sectionTitleMuted}>Scams don&rsquo;t look like scams anymore.</span>
+                <CutReveal>Whatever reached you, check it.</CutReveal>{" "}
+                <span className={styles.sectionTitleMuted}>
+                  <CutReveal delay={0.3}>Scams don’t look like scams anymore.</CutReveal>
+                </span>
               </h2>
               <p className={styles.sectionLead}>
                 The obvious tells are gone. Modern scams copy the exact tone and branding of
@@ -202,7 +206,9 @@ export default function Home() {
           <div className={styles.shell}>
             <div className={styles.sectionHeadCenter} data-reveal>
               <p className={styles.sectionLabel}>TRY IT HERE</p>
-              <h2 id="demo-heading" className={styles.sectionTitle}>Watch the engine think.</h2>
+              <h2 id="demo-heading" className={styles.sectionTitle}>
+                <CutReveal>Watch the engine think.</CutReveal>
+              </h2>
               <p className={styles.sectionLead}>
                 Edit the message and see ScamShield&rsquo;s pattern checks respond as you type.
                 These are the real rules the server runs first &mdash; running right here in your
@@ -220,7 +226,10 @@ export default function Home() {
             <div className={styles.sectionHead} data-reveal>
               <p className={styles.sectionLabel}>HOW IT WORKS</p>
               <h2 id="how-heading" className={styles.sectionTitle}>
-                Four steps. <span className={styles.sectionTitleMuted}>About ten seconds.</span>
+                <CutReveal>Four steps.</CutReveal>{" "}
+                <span className={styles.sectionTitleMuted}>
+                  <CutReveal delay={0.16}>About ten seconds.</CutReveal>
+                </span>
               </h2>
               <p className={styles.sectionLead}>
                 You end up with more than a verdict &mdash; you end up understanding the message,
@@ -241,7 +250,9 @@ export default function Home() {
             <div className={styles.engine}>
               <div data-reveal>
                 <p className={styles.sectionLabel}>UNDER THE HOOD</p>
-                <h3 className={styles.engineTitle}>We don&rsquo;t just ask an AI if it&rsquo;s a scam.</h3>
+                <h3 className={styles.engineTitle}>
+                  <CutReveal>We don’t just ask an AI if it’s a scam.</CutReveal>
+                </h3>
                 <p className={styles.engineText}>
                   An AI asked &ldquo;is this a scam?&rdquo; will answer confidently either way, and
                   you have no way to check it. So the deterministic engine runs first and runs
@@ -273,7 +284,9 @@ export default function Home() {
           <div className={styles.shell}>
             <div className={styles.sectionHead} data-reveal>
               <p className={styles.sectionLabel}>WHAT SCAMSHIELD DETECTS</p>
-              <h2 id="detects-heading" className={styles.sectionTitle}>The mechanics behind almost every scam.</h2>
+              <h2 id="detects-heading" className={styles.sectionTitle}>
+                <CutReveal>The mechanics behind almost every scam.</CutReveal>
+              </h2>
               <p className={styles.sectionLead}>
                 Scams vary enormously in story and almost not at all in structure. These four
                 mechanics carry most of them.
@@ -295,15 +308,17 @@ export default function Home() {
         {/* 5 — Final CTA */}
         <section className={styles.finale}>
           <div className={styles.shell} data-reveal-stagger>
-            <h2 className={styles.finaleTitle}>Before you click, check.</h2>
+            <h2 className={styles.finaleTitle}>
+              <CutReveal stagger={0.08}>Before you click, check.</CutReveal>
+            </h2>
             <p className={styles.finaleText}>Turn a suspicious message into a clear answer in seconds.</p>
             <div className={styles.finaleCta}>
               <Link href="/analyze" className={styles.ctaPrimary}>
-                Analyze Something Suspicious
+                <RollText>Analyze Something Suspicious</RollText>
                 <span className={styles.ctaArrow} aria-hidden="true">&rarr;</span>
               </Link>
               <Link href="/simulator" className={styles.ctaSecondary}>
-                Test yourself first
+                <RollText>Test yourself first</RollText>
               </Link>
             </div>
           </div>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteNav } from "../../components/ui/site-nav";
 import { SiteFooter } from "../../components/ui/site-footer";
+import { CutReveal } from "../../components/ui/motion/cut-reveal";
 import styles from "../../components/ui/pages.module.css";
 
 export const metadata: Metadata = {
@@ -25,7 +26,9 @@ export default function AboutPage() {
       <header className={styles.head}>
         <div className={styles.shellNarrow} data-reveal-stagger>
           <p className={styles.eyebrow}>ABOUT</p>
-          <h1 className={styles.title}>An AI security analyst for normal people</h1>
+          <h1 className={styles.title}>
+            <CutReveal>An AI security analyst for normal people</CutReveal>
+          </h1>
           <p className={styles.lead}>
             ScamShield explains suspicious messages instead of just judging them, because a
             conclusion you can check is worth more than one you have to trust.

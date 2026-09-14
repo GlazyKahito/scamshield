@@ -1,14 +1,23 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Sans, IBM_Plex_Mono } from "next/font/google";
+import { IBM_Plex_Mono, Newsreader, Schibsted_Grotesk } from "next/font/google";
 import { FluidParticlesBackground } from "../components/ui/fluid-particles-background";
 import { ScrollReveal } from "../components/ui/scroll-reveal";
 import "./globals.css";
 
-const sans = DM_Sans({
+/** Headings: a text serif with optical sizes, so large titles read like print. */
+const display = Newsreader({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-dm-sans",
-  weight: ["400", "500", "600"],
+  variable: "--font-newsreader",
+  style: ["normal", "italic"],
+  axes: ["opsz"],
+});
+
+/** Body and UI: a sturdy newspaper grotesk, not the default startup sans. */
+const sans = Schibsted_Grotesk({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-schibsted",
 });
 
 const mono = IBM_Plex_Mono({
@@ -34,7 +43,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
+    <html lang="en" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
       <body>
         {/* Lives in the layout, so it persists across every route change. */}
         <FluidParticlesBackground className="site-background" />
