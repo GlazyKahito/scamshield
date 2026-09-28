@@ -130,11 +130,13 @@ function classifyError(error: unknown): AiFailureReason {
 
 /**
  * Models tried, in order, when the primary cannot serve the request. Google
- * returns 503 UNAVAILABLE when a model is overloaded, which in production
- * lasted long enough that retrying gemini-3.8-flash alone did not help.
+ * returns 503 UNAVAILABLE when a model is overloaded or has no capacity for
+ * the key; in production gemini-3.8-flash did so for weeks. Order chosen from
+ * /api/ai-status probes: 3.6 answered in under a second every time, 3.7 was
+ * slower and sometimes stalled, and the 2.5 models are 404 for this key.
  * Override with GEMINI_FALLBACK_MODELS (comma-separated; empty disables).
  */
-const DEFAULT_FALLBACK_MODELS = "gemini-3.7-flash,gemini-2.5-flash";
+const DEFAULT_FALLBACK_MODELS = "gemini-3.6-flash,gemini-3.7-flash";
 
 export function getModelChain(): string[] {
   const fallbacks = (process.env.GEMINI_FALLBACK_MODELS ?? DEFAULT_FALLBACK_MODELS)
