@@ -176,18 +176,26 @@ async function generate(
   apiKey: string,
   models: string[],
   build: (model: string) => GenerateContentParameters,
+  trace?: string[],
 ): Promise<{ response: GenerateContentResponse; model: string }> {
   const started = Date.now();
+  const note = (entry: string) => trace?.push(`${entry} @${Date.now() - started}ms`);
+  const statusOf = (e: unknown) => (e instanceof ApiError ? String(e.status) : e instanceof Error ? e.name : "error");
   for (let i = 0; ; i++) {
     const model = models[i];
     const params = build(model);
     try {
       try {
-        return { response: await getClient(apiKey).models.generateContent(params), model };
+        const response = await getClient(apiKey).models.generateContent(params);
+        note(`${model}: ok`);
+        return { response, model };
       } catch (error) {
+        note(`${model}: ${statusOf(error)}`);
         if (!isThinkingRejected(error) || !params.config?.thinkingConfig) throw error;
         console.warn(`[gemini] ${model} rejected the thinking setting, retrying with its default`);
-        return { response: await getClient(apiKey).models.generateContent(withoutThinking(params)), model };
+        const response = await getClient(apiKey).models.generateContent(withoutThinking(params));
+        note(`${model} (default thinking): ok`);
+        return { response, model };
       }
     } catch (error) {
       const next = models[i + 1];
@@ -334,6 +342,8 @@ function validate(rawText: string | undefined): AiResult | { parsed: AiAnalysis 
 interface TextOptions {
   ruleFindings?: string[];
   hostnames?: string[];
+  /** Diagnostics only: receives one entry per model attempt. */
+  trace?: string[];
 }
 
 /** Analyse submitted text. Returns a typed failure instead of throwing. */
@@ -346,13 +356,17 @@ export async function analyzeWithGemini(content: string, options: TextOptions = 
   const contents = buildAnalysisPrompt(content, options);
 
   try {
-    const { response, model } = await generate(apiKey, getModelChain(), (model) =>
-      analysisRequest(model, contents, controller.signal),
+    const { response, model } = await generate(
+      apiKey,
+      getModelChain(),
+      (model) => analysisRequest(model, contents, controller.signal),
+      options.trace,
     );
 
     logFinish(response);
     const validated = validate(response.text);
     if ("parsed" in validated) return { ok: true, analysis: validated.parsed, model };
+    options.trace?.push(`validation: ${validated.ok ? "" : validated.reason} (finish ${response.candidates?.[0]?.finishReason ?? "?"})`);
     return validated;
   } catch (error) {
     // Our own timer fired: that is a timeout however the runtime words the abort.
