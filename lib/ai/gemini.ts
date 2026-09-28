@@ -78,8 +78,18 @@ export function getModelName(): string {
   return process.env.GEMINI_MODEL?.trim() || DEFAULT_MODEL;
 }
 
+/**
+ * The key as Google should see it. Values pasted into a dashboard often keep
+ * the quotes from a .env line or stray whitespace, which Google rejects as
+ * API_KEY_INVALID, so both are stripped.
+ */
+function readApiKey(): string | undefined {
+  const raw = process.env.GEMINI_API_KEY?.trim().replace(/^(["'])(.*)\1$/, "$2").trim();
+  return raw || undefined;
+}
+
 export function isAiConfigured(): boolean {
-  return Boolean(process.env.GEMINI_API_KEY?.trim());
+  return Boolean(readApiKey());
 }
 
 /**
@@ -168,6 +178,58 @@ async function generate(
   }
 }
 
+export interface ModelProbe {
+  model: string;
+  ok: boolean;
+  /** HTTP status from Google, when it answered with an error. */
+  status?: number;
+  /** Google's machine-readable reason, e.g. API_KEY_INVALID or SERVICE_DISABLED. */
+  reason?: string;
+  ms: number;
+}
+
+export interface AiStatus {
+  configured: boolean;
+  /** Shape check only; the key itself is never returned. */
+  keyFormat: "missing" | "ok" | "unexpected";
+  models: ModelProbe[];
+}
+
+/**
+ * Diagnostic: one tiny request per model in the chain. Returns Google's status
+ * and reason code for each, never the key or any message text.
+ */
+export async function probeGemini(): Promise<AiStatus> {
+  const apiKey = readApiKey();
+  if (!apiKey) return { configured: false, keyFormat: "missing", models: [] };
+  // Gemini API keys are 39 characters beginning with "AIza".
+  const keyFormat = /^AIza[\w-]{35}$/.test(apiKey) ? "ok" : "unexpected";
+
+  const models: ModelProbe[] = [];
+  for (const model of getModelChain()) {
+    const started = Date.now();
+    try {
+      await getClient(apiKey).models.generateContent({
+        model,
+        contents: "Reply with the single word OK.",
+        config: { maxOutputTokens: 16, abortSignal: AbortSignal.timeout(15_000) },
+      });
+      models.push({ model, ok: true, ms: Date.now() - started });
+    } catch (error) {
+      const probe: ModelProbe = { model, ok: false, ms: Date.now() - started };
+      if (error instanceof ApiError) {
+        probe.status = error.status;
+        probe.reason =
+          /"reason":\s*"([A-Z_]+)"/.exec(error.message)?.[1] ?? /"status":\s*"([A-Z_]+)"/.exec(error.message)?.[1];
+      } else {
+        probe.reason = error instanceof Error ? error.name : "UNKNOWN";
+      }
+      models.push(probe);
+    }
+  }
+  return { configured: true, keyFormat, models };
+}
+
 /** Log why a response ended early; a truncated JSON body otherwise surfaces only as INVALID_JSON. */
 function logFinish(response: GenerateContentResponse): void {
   const reason = response.candidates?.[0]?.finishReason;
@@ -210,7 +272,7 @@ interface TextOptions {
 
 /** Analyse submitted text. Returns a typed failure instead of throwing. */
 export async function analyzeWithGemini(content: string, options: TextOptions = {}): Promise<AiResult> {
-  const apiKey = process.env.GEMINI_API_KEY?.trim();
+  const apiKey = readApiKey();
   if (!apiKey) return fail("NO_API_KEY");
 
   const controller = new AbortController();
@@ -256,7 +318,7 @@ interface ImageOptions {
  * than faking OCR, per the spec.
  */
 export async function analyzeImageWithGemini({ base64Data, mimeType }: ImageOptions): Promise<AiResult> {
-  const apiKey = process.env.GEMINI_API_KEY?.trim();
+  const apiKey = readApiKey();
   if (!apiKey) return fail("NO_API_KEY");
 
   const models = getModelChain().filter((m) => supportsVision(m));
