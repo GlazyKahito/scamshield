@@ -199,14 +199,14 @@ export interface AiStatus {
  * Diagnostic: one tiny request per model in the chain. Returns Google's status
  * and reason code for each, never the key or any message text.
  */
-export async function probeGemini(): Promise<AiStatus> {
+export async function probeGemini(candidates: string[] = getModelChain()): Promise<AiStatus> {
   const apiKey = readApiKey();
   if (!apiKey) return { configured: false, keyFormat: "missing", models: [] };
-  // Gemini API keys are 39 characters beginning with "AIza".
-  const keyFormat = /^AIza[\w-]{35}$/.test(apiKey) ? "ok" : "unexpected";
+  // Key formats vary (AIza…, newer styles), so only flag whitespace or quotes left inside.
+  const keyFormat = /^[\w.-]{20,}$/.test(apiKey) ? "ok" : "unexpected";
 
   const models: ModelProbe[] = [];
-  for (const model of getModelChain()) {
+  for (const model of candidates) {
     const started = Date.now();
     try {
       await getClient(apiKey).models.generateContent({
@@ -228,6 +228,18 @@ export async function probeGemini(): Promise<AiStatus> {
     }
   }
   return { configured: true, keyFormat, models };
+}
+
+/** Names of the text-generation models this key can call, for picking a working chain. */
+export async function listAvailableModels(): Promise<string[]> {
+  const apiKey = readApiKey();
+  if (!apiKey) return [];
+  const names: string[] = [];
+  const pager = await getClient(apiKey).models.list({ config: { pageSize: 100 } });
+  for await (const m of pager) {
+    if (m.supportedActions?.includes("generateContent") && m.name) names.push(m.name.replace(/^models\//, ""));
+  }
+  return names.sort();
 }
 
 /** Log why a response ended early; a truncated JSON body otherwise surfaces only as INVALID_JSON. */
