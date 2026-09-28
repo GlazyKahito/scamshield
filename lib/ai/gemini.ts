@@ -167,6 +167,15 @@ const FAILOVER_STATUS = new Set([404, 429, 500, 502, 503, 504]);
 const FAILOVER_DELAY_MS = 400;
 /** Stop failing over when less than this is left of TIMEOUT_MS; a new model could not finish. */
 const FAILOVER_MIN_BUDGET_MS = 8_000;
+/**
+ * Longest one model may take before the next is tried. On the free tier a
+ * model under load can accept a request and never answer; a normal full
+ * analysis finishes in 2-10s.
+ */
+const ATTEMPT_TIMEOUT_MS = 14_000;
+/** Passes over the model chain before giving up, budget permitting. */
+const CHAIN_ROUNDS = 2;
+const ROUND_PAUSE_MS = 1_500;
 
 /**
  * generateContent across the model chain. `build` makes the request for a
@@ -175,22 +184,34 @@ const FAILOVER_MIN_BUDGET_MS = 8_000;
 async function generate(
   apiKey: string,
   models: string[],
-  build: (model: string) => GenerateContentParameters,
+  build: (model: string, signal: AbortSignal) => GenerateContentParameters,
+  outer: AbortSignal,
   trace?: string[],
 ): Promise<{ response: GenerateContentResponse; model: string }> {
   const started = Date.now();
   const note = (entry: string) => trace?.push(`${entry} @${Date.now() - started}ms`);
   const statusOf = (e: unknown) => (e instanceof ApiError ? String(e.status) : e instanceof Error ? e.name : "error");
-  for (let i = 0; ; i++) {
-    const model = models[i];
-    const params = build(model);
+  // Two passes over the chain: Google's 503s are often gone a second later.
+  const attempts = Array.from({ length: CHAIN_ROUNDS }, () => models).flat();
+  // A model that stalled once is not given a second full attempt.
+  const stalledModels = new Set<string>();
+  let lastError: unknown = new Error("No Gemini model attempted");
+
+  for (let i = 0; i < attempts.length; i++) {
+    const model = attempts[i];
+    if (stalledModels.has(model)) continue;
+    const remaining = TIMEOUT_MS - (Date.now() - started);
+    if (i > 0 && remaining < FAILOVER_MIN_BUDGET_MS) break;
+    // Cap each attempt so one stalled model cannot spend the whole budget.
+    const attemptLimit = AbortSignal.timeout(Math.min(ATTEMPT_TIMEOUT_MS, remaining));
+    const params = build(model, AbortSignal.any([outer, attemptLimit]));
     try {
       try {
         const response = await getClient(apiKey).models.generateContent(params);
         note(`${model}: ok`);
         return { response, model };
       } catch (error) {
-        note(`${model}: ${statusOf(error)}`);
+        note(`${model}: ${attemptLimit.aborted && !outer.aborted ? "attempt timeout" : statusOf(error)}`);
         if (!isThinkingRejected(error) || !params.config?.thinkingConfig) throw error;
         console.warn(`[gemini] ${model} rejected the thinking setting, retrying with its default`);
         const response = await getClient(apiKey).models.generateContent(withoutThinking(params));
@@ -198,13 +219,18 @@ async function generate(
         return { response, model };
       }
     } catch (error) {
-      const next = models[i + 1];
-      const canFailover = error instanceof ApiError && FAILOVER_STATUS.has(error.status);
-      if (!next || !canFailover || TIMEOUT_MS - (Date.now() - started) < FAILOVER_MIN_BUDGET_MS) throw error;
-      console.warn(`[gemini] ${model} returned ${error.status}, falling back to ${next}`);
-      await new Promise((resolve) => setTimeout(resolve, FAILOVER_DELAY_MS));
+      lastError = error;
+      const stalled = attemptLimit.aborted && !outer.aborted;
+      const canFailover = stalled || (error instanceof ApiError && FAILOVER_STATUS.has(error.status));
+      if (!canFailover) throw error;
+      if (stalled) stalledModels.add(model);
+      console.warn(`[gemini] ${model} ${stalled ? "stalled" : `returned ${statusOf(error)}`}, trying the next model`);
+      // A longer pause before starting the chain again gives a demand spike time to pass.
+      const pause = (i + 1) % models.length === 0 ? ROUND_PAUSE_MS : FAILOVER_DELAY_MS;
+      await new Promise((resolve) => setTimeout(resolve, pause));
     }
   }
+  throw lastError;
 }
 
 export interface ModelProbe {
@@ -359,7 +385,8 @@ export async function analyzeWithGemini(content: string, options: TextOptions = 
     const { response, model } = await generate(
       apiKey,
       getModelChain(),
-      (model) => analysisRequest(model, contents, controller.signal),
+      (model, signal) => analysisRequest(model, contents, signal),
+      controller.signal,
       options.trace,
     );
 
@@ -399,7 +426,7 @@ export async function analyzeImageWithGemini({ base64Data, mimeType }: ImageOpti
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const { response, model } = await generate(apiKey, models, (model) => ({
+    const { response, model } = await generate(apiKey, models, (model, signal) => ({
       model,
       contents: [
         {
@@ -416,9 +443,9 @@ export async function analyzeImageWithGemini({ base64Data, mimeType }: ImageOpti
         responseSchema: GEMINI_RESPONSE_SCHEMA,
         ...generationTuning(model),
         maxOutputTokens: MAX_OUTPUT_TOKENS,
-        abortSignal: controller.signal,
+        abortSignal: signal,
       },
-    }));
+    }), controller.signal);
 
     logFinish(response);
     const validated = validate(response.text);
