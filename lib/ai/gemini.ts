@@ -187,6 +187,8 @@ export interface ModelProbe {
   status?: number;
   /** Google's machine-readable reason, e.g. API_KEY_INVALID or SERVICE_DISABLED. */
   reason?: string;
+  /** Google's error text, first 240 chars. Safe here: the probe sends only fixed text. */
+  detail?: string;
   ms: number;
 }
 
@@ -201,7 +203,27 @@ export interface AiStatus {
  * Diagnostic: one tiny request per model in the chain. Returns Google's status
  * and reason code for each, never the key or any message text.
  */
-export async function probeGemini(candidates: string[] = getModelChain()): Promise<AiStatus> {
+/** The real analysis request, so a full probe exercises the same schema and settings. */
+function analysisRequest(model: string, contents: string, abortSignal: AbortSignal): GenerateContentParameters {
+  return {
+    model,
+    contents,
+    config: {
+      systemInstruction: SYSTEM_INSTRUCTION,
+      responseMimeType: "application/json",
+      responseSchema: GEMINI_RESPONSE_SCHEMA,
+      ...generationTuning(model),
+      maxOutputTokens: MAX_OUTPUT_TOKENS,
+      abortSignal,
+    },
+  };
+}
+
+/**
+ * @param full send the real analysis request (schema, system instruction,
+ *             thinking settings) instead of a bare one-word prompt
+ */
+export async function probeGemini(candidates: string[] = getModelChain(), full = false): Promise<AiStatus> {
   const apiKey = readApiKey();
   if (!apiKey) return { configured: false, keyFormat: "missing", models: [] };
   // Key formats vary (AIza…, newer styles), so only flag whitespace or quotes left inside.
@@ -211,18 +233,29 @@ export async function probeGemini(candidates: string[] = getModelChain()): Promi
   for (const model of candidates) {
     const started = Date.now();
     try {
-      await getClient(apiKey).models.generateContent({
-        model,
-        contents: "Reply with the single word OK.",
-        config: { maxOutputTokens: 16, abortSignal: AbortSignal.timeout(15_000) },
-      });
-      models.push({ model, ok: true, ms: Date.now() - started });
+      const signal = AbortSignal.timeout(full ? 30_000 : 15_000);
+      const response = await getClient(apiKey).models.generateContent(
+        full
+          ? analysisRequest(model, buildAnalysisPrompt("Hi, running 10 minutes late. See you at the cafe."), signal)
+          : { model, contents: "Reply with the single word OK.", config: { maxOutputTokens: 16, abortSignal: signal } },
+      );
+      const probe: ModelProbe = { model, ok: true, ms: Date.now() - started };
+      if (full) {
+        const validated = validate(response.text);
+        if (!("parsed" in validated)) {
+          probe.ok = false;
+          probe.reason = validated.ok ? undefined : validated.reason;
+          probe.detail = response.candidates?.[0]?.finishReason;
+        }
+      }
+      models.push(probe);
     } catch (error) {
       const probe: ModelProbe = { model, ok: false, ms: Date.now() - started };
       if (error instanceof ApiError) {
         probe.status = error.status;
         probe.reason =
           /"reason":\s*"([A-Z_]+)"/.exec(error.message)?.[1] ?? /"status":\s*"([A-Z_]+)"/.exec(error.message)?.[1];
+        probe.detail = (/"message":\s*"([^"]*)"/.exec(error.message)?.[1] ?? error.message).slice(0, 240);
       } else {
         probe.reason = error instanceof Error ? error.name : "UNKNOWN";
       }
@@ -294,18 +327,9 @@ export async function analyzeWithGemini(content: string, options: TextOptions = 
   const contents = buildAnalysisPrompt(content, options);
 
   try {
-    const { response, model } = await generate(apiKey, getModelChain(), (model) => ({
-      model,
-      contents,
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
-        responseMimeType: "application/json",
-        responseSchema: GEMINI_RESPONSE_SCHEMA,
-        ...generationTuning(model),
-        maxOutputTokens: MAX_OUTPUT_TOKENS,
-        abortSignal: controller.signal,
-      },
-    }));
+    const { response, model } = await generate(apiKey, getModelChain(), (model) =>
+      analysisRequest(model, contents, controller.signal),
+    );
 
     logFinish(response);
     const validated = validate(response.text);
