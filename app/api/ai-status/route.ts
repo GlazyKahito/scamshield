@@ -7,6 +7,7 @@
  *
  *   ?models=a,b   probe these model names instead of the configured chain
  *   ?list=1       also list the models this key can call
+ *   ?full=1       send the real analysis request (schema, settings), not a bare prompt
  */
 
 import { NextResponse } from "next/server";
@@ -36,7 +37,7 @@ export async function GET(request: Request) {
     .filter((m) => MODEL_NAME.test(m))
     .slice(0, MAX_PROBES);
 
-  const status = await probeGemini(requested.length > 0 ? requested : undefined);
+  const status = await probeGemini(requested.length > 0 ? requested : undefined, params.get("full") === "1");
   const available = params.get("list") === "1" ? await listAvailableModels().catch(() => null) : undefined;
 
   return NextResponse.json({ ...status, available }, { headers: { "Cache-Control": "no-store" } });
