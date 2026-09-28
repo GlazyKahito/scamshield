@@ -38,14 +38,26 @@ const MAX_OUTPUT_TOKENS = 8192;
 /**
  * Gemini 3 tuning. Temperature stays at the model default (1.0): Google warns
  * that lowering it on Gemini 3 can cause looping, which here surfaces as a
- * truncated JSON body. Thinking is MINIMAL, the Flash default: LOW pushed
- * responses past 20s in production. Older models reject thinkingLevel, so
- * they keep the low temperature instead.
+ * truncated JSON body. Thinking is LOW: gemini-3.8-flash and 3.7-flash reject
+ * MINIMAL with 400 INVALID_ARGUMENT, and LOW fits inside TIMEOUT_MS. If a
+ * model rejects the level anyway, generate() retries it without one. Older
+ * models reject thinkingLevel, so they keep the low temperature instead.
  */
 function generationTuning(model: string): Pick<GenerateContentConfig, "temperature" | "thinkingConfig"> {
   return /gemini-[3-9]/i.test(model)
-    ? { thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL } }
+    ? { thinkingConfig: { thinkingLevel: ThinkingLevel.LOW } }
     : { temperature: 0.2 };
+}
+
+/** Google's 400 for a thinking setting the model does not accept. */
+function isThinkingRejected(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 400 && /thinking/i.test(error.message);
+}
+
+/** The same request with the thinking setting removed, leaving the model's own default. */
+function withoutThinking(params: GenerateContentParameters): GenerateContentParameters {
+  const { thinkingConfig: _dropped, ...config } = params.config ?? {};
+  return { ...params, config };
 }
 
 export type AiFailureReason =
@@ -168,8 +180,15 @@ async function generate(
   const started = Date.now();
   for (let i = 0; ; i++) {
     const model = models[i];
+    const params = build(model);
     try {
-      return { response: await getClient(apiKey).models.generateContent(build(model)), model };
+      try {
+        return { response: await getClient(apiKey).models.generateContent(params), model };
+      } catch (error) {
+        if (!isThinkingRejected(error) || !params.config?.thinkingConfig) throw error;
+        console.warn(`[gemini] ${model} rejected the thinking setting, retrying with its default`);
+        return { response: await getClient(apiKey).models.generateContent(withoutThinking(params)), model };
+      }
     } catch (error) {
       const next = models[i + 1];
       const canFailover = error instanceof ApiError && FAILOVER_STATUS.has(error.status);
