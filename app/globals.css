@@ -109,6 +109,95 @@ svg {
   transform: translate3d(0, 28px, 0);
 }
 
+/*
+ * First-visit loading screen (components/ui/splash-screen.tsx).
+ * splash-failsafe removes it after 4s even if JavaScript never runs.
+ */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  color: var(--ink);
+  transition: opacity 0.6s var(--ease), visibility 0.6s;
+  animation: splash-failsafe 0.6s var(--ease) 4s forwards;
+}
+
+.splash-leaving { opacity: 0; visibility: hidden; }
+
+/* No scrolling the page underneath while the screen is up. */
+html:has(.splash:not(.splash-leaving)) { overflow: hidden; }
+
+.splash-inner { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+
+.splash-outline {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: splash-draw 1s var(--ease) 0.1s forwards;
+}
+
+.splash-bar {
+  transform-origin: 11px 10.4px;
+  transform: scaleX(0);
+  animation: splash-bar 0.5s var(--ease) 0.7s forwards, splash-pulse 1.4s ease-in-out 1.2s infinite;
+}
+
+.splash-word {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  opacity: 0;
+  animation: splash-rise 0.7s var(--ease) 0.45s forwards;
+}
+
+.splash-word span { color: var(--signal); }
+
+.splash-track {
+  position: relative;
+  width: 160px;
+  height: 1px;
+  overflow: hidden;
+  background: var(--hairline);
+}
+
+.splash-progress {
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  transform-origin: left;
+  transform: scaleX(0);
+  animation: splash-fill 1.8s cubic-bezier(0.65, 0, 0.35, 1) 0.3s forwards;
+}
+
+.splash-caption {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+  opacity: 0;
+  animation: splash-rise 0.7s var(--ease) 0.6s forwards;
+}
+
+@keyframes splash-draw { to { stroke-dashoffset: 0; } }
+@keyframes splash-bar { to { transform: scaleX(1); } }
+@keyframes splash-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@keyframes splash-fill { to { transform: scaleX(1); } }
+@keyframes splash-rise { from { opacity: 0; transform: translate3d(0, 8px, 0); } to { opacity: 1; transform: none; } }
+@keyframes splash-failsafe { to { opacity: 0; visibility: hidden; } }
+
+@media (prefers-reduced-motion: reduce) {
+  /* Static mark and text; only the fade out remains. */
+  .splash-outline { stroke-dashoffset: 0; }
+  .splash-bar { transform: none; }
+  .splash-word, .splash-caption { opacity: 1; }
+  .splash-progress { transform: scaleX(1); }
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
